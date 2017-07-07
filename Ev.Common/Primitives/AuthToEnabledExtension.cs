@@ -32,7 +32,7 @@ namespace Ev.Common.Primitives
         /// <summary>
         /// 权限选项
         /// </summary>
-        public System.Enum Operation { get; set; }
+        public Enum Operation { get; set; }
 
         /// <summary>
         /// 构造函数
@@ -49,7 +49,7 @@ namespace Ev.Common.Primitives
         /// <author>FreshMan</author>
         /// <creattime>2017-05-15</creattime>
         /// <param name="operation"></param>
-        public AuthToEnabledExtension(System.Enum operation)
+        public AuthToEnabledExtension(Enum operation)
         {
             Operation = operation;
         }

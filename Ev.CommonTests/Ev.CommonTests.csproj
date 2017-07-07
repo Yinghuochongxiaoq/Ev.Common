@@ -8,7 +8,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Ev.CommonTests</RootNamespace>
     <AssemblyName>Ev.CommonTests</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
@@ -38,6 +38,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <Choose>
@@ -53,9 +54,18 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
+    <Compile Include="DataConvert\DataTypeConvertHelperTests.cs" />
+    <Compile Include="DeepCopy\DeepCopyHelperTests.cs" />
+    <Compile Include="Enum\EnumSex.cs" />
+    <Compile Include="Enum\OrderType.cs" />
+    <Compile Include="Enum\PersonTimeState.cs" />
+    <Compile Include="Enum\PersonTimeType.cs" />
+    <Compile Include="Model\PersonGattScheduleInfoDto.cs" />
+    <Compile Include="Model\TestsTabelToListObject.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Enumber\EnumberHelperTests.cs" />
-    <Compile Include="Enumber\ExcelHelperTests.cs" />
+    <Compile Include="ExcelHelper\ExcelHelperTests.cs" />
+    <Compile Include="Zip\ZipHelperTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Ev.Common\Ev.Common.csproj">
