@@ -25,6 +25,9 @@ using NPOI.XSSF.UserModel;
 
 namespace Ev.Common.ExcelHelper
 {
+    /// <summary>
+    /// excel helper
+    /// </summary>
     public class ExcelHelper
     {
         #region [0、私有变量]
@@ -102,10 +105,6 @@ namespace Ev.Common.ExcelHelper
                     da.Fill(dsItem, sheetName);
                     ds.Tables.Add(dsItem.Tables[0].Copy());
                 }
-            }
-            catch (Exception)
-            {
-                return null;
             }
             finally
             {

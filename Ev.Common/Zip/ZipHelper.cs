@@ -22,6 +22,9 @@ using System.Text;
 
 namespace Ev.Common.Zip
 {
+    /// <summary>
+    /// Zip helper
+    /// </summary>
     public class ZipHelper
     {
         /// <summary>

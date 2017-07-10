@@ -15,6 +15,7 @@
 *==============================================================
 */
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -31,6 +32,48 @@ namespace Ev.Common.DataConvert
     /// </summary>
     public static class DataTypeConvertHelper
     {
+        #region [0、Check Entity have reflect]
+        /// <summary>
+        /// 检测实体中是否存在引用，存在返回false，不存在，返回true
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="entity"></param>
+        /// <param name="errorMessage"></param>
+        /// <author>FreshMan</author>
+        /// <creattime>2017-06-21</creattime>
+        /// <returns></returns>
+        public static bool CheckEntityRelevanceIsEmpty<T>(T entity, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            var properties = typeof(T).GetProperties();
+            foreach (var propertyInfo in properties)
+            {
+                if (propertyInfo.PropertyType.IsGenericType)
+                {
+                    var t = typeof(T).GetProperty(propertyInfo.Name).GetValue(entity, null);
+                    try
+                    {
+                        ICollection ilist = t as ICollection;
+                        if (ilist != null && ilist.Count > 0)
+                        {
+                            foreach (object obj in ilist)
+                            {
+                                errorMessage = typeof(T).Name + " data template has been used by type:" + obj.GetType().FullName + " you can't delete it.";
+                                break;
+                            }
+                        }
+
+                    }
+                    catch (Exception exception)
+                    {
+                        errorMessage = exception.Message + exception.InnerException?.Message;
+                    }
+                }
+            }
+            return string.IsNullOrEmpty(errorMessage);
+        }
+        #endregion
+
         #region [1、IEnumerable to dataTable]
 
         #region [1.1 比较慢的方法]
