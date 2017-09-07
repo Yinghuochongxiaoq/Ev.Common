@@ -18,9 +18,10 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>
+    </DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Debug\Ev.Common.XML</DocumentationFile>
@@ -96,6 +97,7 @@
   <ItemGroup>
     <Compile Include="Commands\AuthDelegateCommand.cs" />
     <Compile Include="Commands\DelegateCommandBase.cs" />
+    <Compile Include="CommonModel\CommonModel.cs" />
     <Compile Include="DataConvert\DataTypeConvertHelper.cs" />
     <Compile Include="DeepCopy\DeepCopyHelper.cs" />
     <Compile Include="Permission\AuthorizeIgnoreAttribute.cs" />
