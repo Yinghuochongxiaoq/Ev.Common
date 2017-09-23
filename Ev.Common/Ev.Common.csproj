@@ -35,6 +35,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DevExpress.Xpo.v16.1, Version=16.1.6.0, Culture=neutral, PublicKeyToken=b88d1754d700e49a, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>D:\DevExpress 16.1\Components\Bin\Framework\DevExpress.Xpo.v16.1.dll</HintPath>
+    </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.0.0\lib\net45\EntityFramework.dll</HintPath>
       <Private>True</Private>
@@ -111,6 +115,7 @@
     <Compile Include="Enumber\EnumberHelper.cs" />
     <Compile Include="ExcelHelper\ExcelHelper.cs" />
     <Compile Include="SqlHelper\SimpleCrud.cs" />
+    <Compile Include="SqlHelper\SimpleCrudXpo.cs" />
     <Compile Include="Zip\ZipHelper.cs" />
   </ItemGroup>
   <ItemGroup>

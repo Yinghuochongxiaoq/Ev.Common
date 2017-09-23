@@ -29,7 +29,7 @@ namespace Ev.Common.SqlHelper
     /// <summary>
     /// 简单类型处理
     /// </summary>
-    public static class SimpleCrud
+    public static partial class SimpleCrud
     {
         #region [1、全局变量]
 
@@ -103,9 +103,20 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static int ExecuteCommand(string safeSql)
         {
-            SqlCommand cmd = new SqlCommand(safeSql, Connection);
-            int result = cmd.ExecuteNonQuery();
-            return result;
+            try
+            {
+                SqlCommand cmd = new SqlCommand(safeSql, Connection);
+                int result = cmd.ExecuteNonQuery();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -116,9 +127,65 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static int ExecuteCommand(string sql, params SqlParameter[] values)
         {
-            SqlCommand cmd = new SqlCommand(sql, Connection);
-            cmd.Parameters.AddRange(values);
-            return cmd.ExecuteNonQuery();
+            try
+            {
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                cmd.Parameters.AddRange(values);
+                return cmd.ExecuteNonQuery();
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="values"></param>
+        /// <param name="transaction"></param>
+        /// <param name="timeOut"></param>
+        /// <returns></returns>
+        public static int ExecuteCommand(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
+        {
+            SqlTransaction tranProducts = null;
+            try
+            {
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                if (transaction)
+                {
+                    tranProducts = Connection.BeginTransaction();
+                }
+                if (timeOut != null && timeOut > 0)
+                {
+                    cmd.CommandTimeout = (int)timeOut;
+                }
+                cmd.Parameters.AddRange(values.ToArray());
+                cmd.Transaction = tranProducts;
+                var result = cmd.ExecuteNonQuery();
+                if (transaction)
+                {
+                    tranProducts.Commit();
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (transaction)
+                {
+                    tranProducts?.Rollback();
+                }
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -126,11 +193,22 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="safeSql"></param>
         /// <returns></returns>
-        public static int GetScalar(string safeSql)
+        public static object GetScalar(string safeSql)
         {
-            SqlCommand cmd = new SqlCommand(safeSql, Connection);
-            int result = Convert.ToInt32(cmd.ExecuteScalar());
-            return result;
+            try
+            {
+                SqlCommand cmd = new SqlCommand(safeSql, Connection);
+                var result = cmd.ExecuteScalar();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -139,12 +217,24 @@ namespace Ev.Common.SqlHelper
         /// <param name="sql"></param>
         /// <param name="values"></param>
         /// <returns></returns>
-        public static int GetScalar(string sql, params SqlParameter[] values)
+        public static object GetScalar(string sql, params SqlParameter[] values)
         {
-            SqlCommand cmd = new SqlCommand(sql, Connection);
-            cmd.Parameters.AddRange(values);
-            int result = Convert.ToInt32(cmd.ExecuteScalar());
-            return result;
+            try
+            {
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                cmd.Parameters.AddRange(values);
+                var result = cmd.ExecuteScalar();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+
         }
 
         /// <summary>
@@ -154,9 +244,20 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static SqlDataReader GetReader(string safeSql)
         {
-            SqlCommand cmd = new SqlCommand(safeSql, Connection);
-            SqlDataReader reader = cmd.ExecuteReader();
-            return reader;
+            try
+            {
+                SqlCommand cmd = new SqlCommand(safeSql, Connection);
+                SqlDataReader reader = cmd.ExecuteReader();
+                return reader;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -167,10 +268,21 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static SqlDataReader GetReader(string sql, params SqlParameter[] values)
         {
-            SqlCommand cmd = new SqlCommand(sql, Connection);
-            cmd.Parameters.AddRange(values);
-            SqlDataReader reader = cmd.ExecuteReader();
-            return reader;
+            try
+            {
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                cmd.Parameters.AddRange(values);
+                SqlDataReader reader = cmd.ExecuteReader();
+                return reader;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -180,11 +292,22 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static DataTable GetDataTable(string safeSql)
         {
-            DataSet ds = new DataSet();
-            SqlCommand cmd = new SqlCommand(safeSql, Connection);
-            SqlDataAdapter da = new SqlDataAdapter(cmd);
-            da.Fill(ds);
-            return ds.Tables[0];
+            try
+            {
+                DataSet ds = new DataSet();
+                SqlCommand cmd = new SqlCommand(safeSql, Connection);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(ds);
+                return ds.Tables[0];
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -195,12 +318,23 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static DataTable GetDataTable(string sql, params SqlParameter[] values)
         {
-            DataSet ds = new DataSet();
-            SqlCommand cmd = new SqlCommand(sql, Connection);
-            cmd.Parameters.AddRange(values);
-            SqlDataAdapter da = new SqlDataAdapter(cmd);
-            da.Fill(ds);
-            return ds.Tables[0];
+            try
+            {
+                DataSet ds = new DataSet();
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                cmd.Parameters.AddRange(values);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(ds);
+                return ds.Tables[0];
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -208,11 +342,22 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         public static DataSet GetDataSet(string sql, string table)
         {
-            DataSet ds = new DataSet();
-            SqlCommand cmd = new SqlCommand(sql, Connection);
-            SqlDataAdapter da = new SqlDataAdapter(cmd);
-            da.Fill(ds, table);
-            return ds;
+            try
+            {
+                DataSet ds = new DataSet();
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(ds, table);
+                return ds;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
 
         /// <summary>
@@ -224,12 +369,68 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static DataSet GetDataSet(string sql, string table, params SqlParameter[] values)
         {
-            DataSet ds = new DataSet();
-            SqlCommand cmd = new SqlCommand(sql, Connection);
-            cmd.Parameters.AddRange(values);
-            SqlDataAdapter da = new SqlDataAdapter(cmd);
-            da.Fill(ds, table);
-            return ds;
+            try
+            {
+                DataSet ds = new DataSet();
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                cmd.Parameters.AddRange(values);
+                SqlDataAdapter da = new SqlDataAdapter(cmd);
+                da.Fill(ds, table);
+                return ds;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="values"></param>
+        /// <param name="transaction"></param>
+        /// <param name="timeOut"></param>
+        /// <returns></returns>
+        public static dynamic Query(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
+        {
+            SqlTransaction tranProducts = null;
+            try
+            {
+                SqlCommand cmd = new SqlCommand(sql, Connection);
+                if (transaction)
+                {
+                    tranProducts = Connection.BeginTransaction();
+                }
+                if (timeOut != null && timeOut > 0)
+                {
+                    cmd.CommandTimeout = (int)timeOut;
+                }
+                cmd.Parameters.AddRange(values.ToArray());
+                cmd.Transaction = tranProducts;
+                var result = cmd.ExecuteScalar();
+                if (transaction)
+                {
+                    tranProducts.Commit();
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                if (transaction)
+                {
+                    tranProducts?.Rollback();
+                }
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
         }
         #endregion
 
@@ -399,7 +600,8 @@ FROM
                 historyDictionary.Add(tableName, 1);
                 return new List<string> { tableName };
             }
-            var resultList = TraversingGraph(referencedMap, tableName, historyDictionary);
+            var nodeSet = new HashSet<string>();
+            var resultList = TraversingGraph(referencedMap, tableName, historyDictionary, nodeSet);
             return resultList;
         }
 
@@ -408,11 +610,13 @@ FROM
         /// </summary>
         /// <param name="sourceDictionary">原始结点数据值</param>
         /// <param name="nodeName">当前结点</param>
-        /// <param name="historyDictionary">访问记录是否已经访问过</param>
+        /// <param name="historyDictionary">倒序叶子节点</param>
+        /// <param name="nodeSet">记录是否访问过</param>
         /// <returns></returns>
-        private static List<string> TraversingGraph(Dictionary<string, List<string>> sourceDictionary, string nodeName, Dictionary<string, int> historyDictionary)
+        private static List<string> TraversingGraph(Dictionary<string, List<string>> sourceDictionary, string nodeName, Dictionary<string, int> historyDictionary, HashSet<string> nodeSet)
         {
             var result = new List<string>();
+            if (!nodeSet.Add(nodeName)) return result;
             //是否已经访问过
             if (historyDictionary.ContainsKey(nodeName)) return result;
             //出度为0
@@ -427,7 +631,7 @@ FROM
             for (int i = 0; i < sourceDictionary[nodeName].Count; i++)
             {
                 var nextNodeName = sourceDictionary[nodeName][i];
-                var recurrenceList = TraversingGraph(sourceDictionary, nextNodeName, historyDictionary);
+                var recurrenceList = TraversingGraph(sourceDictionary, nextNodeName, historyDictionary, nodeSet);
                 if (recurrenceList != null && recurrenceList.Any()) result.AddRange(recurrenceList);
             }
             result.Add(nodeName);

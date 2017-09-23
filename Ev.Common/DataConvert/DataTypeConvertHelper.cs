@@ -548,6 +548,57 @@ namespace Ev.Common.DataConvert
             return num;
         }
         #endregion
+
+        #region [4、To long value]
+        /// <summary>
+        /// 转换成long
+        /// </summary>
+        /// <param name="val"></param>
+        /// <returns></returns>
+        public static long ToLong(object val)
+        {
+            return ToLong(val, 0L);
+        }
+
+        /// <summary>
+        /// 转换成long
+        /// </summary>
+        /// <param name="val"></param>
+        /// <param name="defaultValue"></param>
+        /// <returns></returns>
+        public static long ToLong(object val, long defaultValue)
+        {
+            long num;
+            if ((val == null) || (val == DBNull.Value))
+            {
+                return defaultValue;
+            }
+            if (val is long)
+            {
+                return (long)val;
+            }
+            if (!long.TryParse(val.ToString(), out num))
+            {
+                return defaultValue;
+            }
+            return num;
+        }
+
+        /// <summary>
+        /// 转换成long?
+        /// </summary>
+        /// <param name="val"></param>
+        /// <returns></returns>
+        public static long? ToLongNullable(object val)
+        {
+            long num = ToLong(val);
+            if (num.Equals(0L))
+            {
+                return null;
+            }
+            return num;
+        }
+        #endregion
     }
 
     /// <summary>
