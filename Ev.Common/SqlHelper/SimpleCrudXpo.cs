@@ -151,6 +151,43 @@ namespace Ev.Common.SqlHelper
             return (TKey)r;
         }
 
+
+        /// <summary>
+        /// 创建插入SQL
+        /// </summary>
+        /// <param name="entityToInsert"></param>
+        /// <param name="transaction"></param>
+        /// <param name="commandTimeout"></param>
+        /// <typeparam name="TKey">仅仅支持一下类型：int,uint,long,ulong,short,ushort,Guid,string</typeparam>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <returns></returns>
+        public static string GetInsertSql<TKey, TEntity>(TEntity entityToInsert,
+            bool transaction = false, int? commandTimeout = null)
+        {
+            var type = entityToInsert.GetType();
+            var idProps = GetIdProperties(entityToInsert).ToList();
+
+            if (!idProps.Any())
+                throw new ArgumentException("Insert<T> only supports an entity with a [Key] or Id property");
+            var baseType = typeof(TKey);
+            var underlyingType = Nullable.GetUnderlyingType(baseType);
+            var keytype = underlyingType ?? baseType;
+            if (keytype != typeof(int) && keytype != typeof(uint) && keytype != typeof(long) && keytype != typeof(ulong) && keytype != typeof(short) && keytype != typeof(ushort) && keytype != typeof(Guid) && keytype != typeof(string))
+            {
+                throw new Exception("Invalid return type");
+            }
+            var name = GetTableName(entityToInsert);
+            var sb = new StringBuilder();
+            sb.AppendFormat(" insert into {0} ", name);
+            sb.Append(" (");
+            BuildInsertParameters(sb, type);
+            sb.Append(") ");
+            sb.Append("values");
+            sb.Append(" (");
+            BuildInsertValues(sb, type);
+            sb.Append(")");
+            return sb.ToString();
+        }
         #endregion
 
         #region [3、获取表名称]
