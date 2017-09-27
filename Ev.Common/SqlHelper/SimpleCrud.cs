@@ -31,12 +31,16 @@ namespace Ev.Common.SqlHelper
     /// </summary>
     public static partial class SimpleCrud
     {
-        #region [1、全局变量]
-
         /// <summary>
-        /// 链接对象
+        /// 初始化函数
         /// </summary>
-        private static SqlConnection _connection;
+        static SimpleCrud()
+        {
+            _connectionString = string.IsNullOrEmpty(_connectionString)
+                    ? ConfigurationManager.AppSettings["ConstrSQL"]
+                    : _connectionString;
+        }
+        #region [1、全局变量]
 
         /// <summary>
         /// 链接字符串
@@ -68,35 +72,6 @@ namespace Ev.Common.SqlHelper
         }
 
         /// <summary>
-        /// 获取链接对象，优先考虑自定义链接字符串
-        /// </summary>
-        public static SqlConnection Connection
-        {
-            get
-            {
-                _connectionString = string.IsNullOrEmpty(_connectionString)
-                    ? ConfigurationManager.AppSettings["ConstrSQL"]
-                    : _connectionString;
-
-                if (_connection == null)
-                {
-                    _connection = new SqlConnection(_connectionString);
-                    _connection.Open();
-                }
-                else if (_connection.State == ConnectionState.Closed)
-                {
-                    _connection.Open();
-                }
-                else if (_connection.State == ConnectionState.Broken)
-                {
-                    _connection.Close();
-                    _connection.Open();
-                }
-                return _connection;
-            }
-        }
-
-        /// <summary>
         /// 执行sql
         /// </summary>
         /// <param name="safeSql"></param>
@@ -105,9 +80,13 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                SqlCommand cmd = new SqlCommand(safeSql, Connection);
-                int result = cmd.ExecuteNonQuery();
-                return result;
+                using (var conn = new SqlConnection(_connectionString))
+                {
+                    conn.Open();
+                    SqlCommand cmd = new SqlCommand(safeSql, conn);
+                    int result = cmd.ExecuteNonQuery();
+                    return result;
+                }
             }
             catch (Exception ex)
             {
@@ -129,9 +108,15 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                cmd.Parameters.AddRange(values);
-                return cmd.ExecuteNonQuery();
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (values.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(values);
+                    }
+                    return cmd.ExecuteNonQuery();
+                }
             }
             catch (Exception ex)
             {
@@ -156,23 +141,31 @@ namespace Ev.Common.SqlHelper
             SqlTransaction tranProducts = null;
             try
             {
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                if (transaction)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    tranProducts = Connection.BeginTransaction();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (transaction)
+                    {
+                        tranProducts = connection.BeginTransaction();
+                    }
+                    if (timeOut != null && timeOut > 0)
+                    {
+                        cmd.CommandTimeout = (int)timeOut;
+                    }
+                    var paramtersList = values.ToArray();
+                    if (paramtersList.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(paramtersList);
+                    }
+                    cmd.Transaction = tranProducts;
+                    var result = cmd.ExecuteNonQuery();
+                    if (transaction)
+                    {
+                        tranProducts.Commit();
+                    }
+                    return result;
                 }
-                if (timeOut != null && timeOut > 0)
-                {
-                    cmd.CommandTimeout = (int)timeOut;
-                }
-                cmd.Parameters.AddRange(values.ToArray());
-                cmd.Transaction = tranProducts;
-                var result = cmd.ExecuteNonQuery();
-                if (transaction)
-                {
-                    tranProducts.Commit();
-                }
-                return result;
+
             }
             catch (Exception ex)
             {
@@ -197,9 +190,12 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                SqlCommand cmd = new SqlCommand(safeSql, Connection);
-                var result = cmd.ExecuteScalar();
-                return result;
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(safeSql, connection);
+                    var result = cmd.ExecuteScalar();
+                    return result;
+                }
             }
             catch (Exception ex)
             {
@@ -221,10 +217,16 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                cmd.Parameters.AddRange(values);
-                var result = cmd.ExecuteScalar();
-                return result;
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (values.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(values);
+                    }
+                    var result = cmd.ExecuteScalar();
+                    return result;
+                }
             }
             catch (Exception ex)
             {
@@ -246,9 +248,12 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                SqlCommand cmd = new SqlCommand(safeSql, Connection);
-                SqlDataReader reader = cmd.ExecuteReader();
-                return reader;
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(safeSql, connection);
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader;
+                }
             }
             catch (Exception ex)
             {
@@ -270,10 +275,16 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                cmd.Parameters.AddRange(values);
-                SqlDataReader reader = cmd.ExecuteReader();
-                return reader;
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (values.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(values);
+                    }
+                    SqlDataReader reader = cmd.ExecuteReader();
+                    return reader;
+                }
             }
             catch (Exception ex)
             {
@@ -294,11 +305,14 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                DataSet ds = new DataSet();
-                SqlCommand cmd = new SqlCommand(safeSql, Connection);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                da.Fill(ds);
-                return ds.Tables[0];
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(safeSql, connection);
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    return ds.Tables[0];
+                }
             }
             catch (Exception ex)
             {
@@ -320,12 +334,18 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                DataSet ds = new DataSet();
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                cmd.Parameters.AddRange(values);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                da.Fill(ds);
-                return ds.Tables[0];
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (values.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(values);
+                    }
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    return ds.Tables[0];
+                }
             }
             catch (Exception ex)
             {
@@ -344,11 +364,14 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                DataSet ds = new DataSet();
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                da.Fill(ds, table);
-                return ds;
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds, table);
+                    return ds;
+                }
             }
             catch (Exception ex)
             {
@@ -371,12 +394,18 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                DataSet ds = new DataSet();
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                cmd.Parameters.AddRange(values);
-                SqlDataAdapter da = new SqlDataAdapter(cmd);
-                da.Fill(ds, table);
-                return ds;
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (values.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(values);
+                    }
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds, table);
+                    return ds;
+                }
             }
             catch (Exception ex)
             {
@@ -401,23 +430,30 @@ namespace Ev.Common.SqlHelper
             SqlTransaction tranProducts = null;
             try
             {
-                SqlCommand cmd = new SqlCommand(sql, Connection);
-                if (transaction)
+                using (var connection = new SqlConnection(_connectionString))
                 {
-                    tranProducts = Connection.BeginTransaction();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (transaction)
+                    {
+                        tranProducts = connection.BeginTransaction();
+                    }
+                    if (timeOut != null && timeOut > 0)
+                    {
+                        cmd.CommandTimeout = (int)timeOut;
+                    }
+                    var paramtersList = values.ToArray();
+                    if (paramtersList.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(paramtersList);
+                    }
+                    cmd.Transaction = tranProducts;
+                    var result = cmd.ExecuteScalar();
+                    if (transaction)
+                    {
+                        tranProducts.Commit();
+                    }
+                    return result;
                 }
-                if (timeOut != null && timeOut > 0)
-                {
-                    cmd.CommandTimeout = (int)timeOut;
-                }
-                cmd.Parameters.AddRange(values.ToArray());
-                cmd.Transaction = tranProducts;
-                var result = cmd.ExecuteScalar();
-                if (transaction)
-                {
-                    tranProducts.Commit();
-                }
-                return result;
             }
             catch (Exception ex)
             {
