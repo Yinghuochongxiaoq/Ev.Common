@@ -15,6 +15,7 @@
 *==============================================================
 */
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
@@ -55,17 +56,17 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 表缓存
         /// </summary>
-        private static readonly IDictionary<Type, Tuple<string, string>> TableNames = new Dictionary<Type, Tuple<string, string>>();
+        private static readonly ConcurrentDictionary<Type, Tuple<string, string>> TableNames = new ConcurrentDictionary<Type, Tuple<string, string>>();
 
         /// <summary>
         /// 列缓存
         /// </summary>
-        private static readonly IDictionary<string, Tuple<string, string>> ColumnNames = new Dictionary<string, Tuple<string, string>>();
+        private static readonly ConcurrentDictionary<string, Tuple<string, string>> ColumnNames = new ConcurrentDictionary<string, Tuple<string, string>>();
 
         /// <summary>
         /// 类型中的字段缓存
         /// </summary>
-        private static readonly IDictionary<string, List<PropertyInfo>> TypePropertyCaches = new Dictionary<string, List<PropertyInfo>>();
+        private static readonly ConcurrentDictionary<string, List<PropertyInfo>> TypePropertyCaches = new ConcurrentDictionary<string, List<PropertyInfo>>();
 
         /// <summary>
         /// 表名称转化器
@@ -274,7 +275,7 @@ namespace Ev.Common.SqlHelper
                 if (tempTableName.Item2 == _dialect) return tempTableName.Item1;
             }
             var tableName = SelftableNameResolver.ResolveTableName(type);
-            TableNames[type] = new Tuple<string, string>(tableName, _dialect);
+            TableNames.TryAdd(type, new Tuple<string, string>(tableName, _dialect));
 
             return tableName;
         }
@@ -470,7 +471,7 @@ namespace Ev.Common.SqlHelper
         /// 获取可存储的简单类型
         /// </summary>
         /// <returns></returns>
-        private static List<PropertyInfo> GetScaffoldableProperties(Type type)
+        public static List<PropertyInfo> GetScaffoldableProperties(Type type)
         {
             string key = $"{type.FullName}";
             List<PropertyInfo> typeProperCaches;
@@ -486,7 +487,7 @@ namespace Ev.Common.SqlHelper
                         && (e.PropertyType.IsSimpleType() ||
                             e.GetCustomAttributes(typeof(SaveEntityAttribute), true).Length > 0)
                         && !ExcludeFieldList.Contains(e.Name)).ToList();
-            TypePropertyCaches.Add(key, typeProperCaches);
+            TypePropertyCaches.TryAdd(key, typeProperCaches);
             return typeProperCaches;
         }
 
@@ -504,7 +505,7 @@ namespace Ev.Common.SqlHelper
                 if (tempColumn.Item2 == _dialect) return tempColumn.Item1;
             }
             var columnName = SelfcolumnNameResolver.ResolveColumnName(propertyInfo);
-            ColumnNames[key] = new Tuple<string, string>(columnName, _dialect);
+            ColumnNames.TryAdd(key, new Tuple<string, string>(columnName, _dialect));
 
             return columnName;
         }
@@ -647,6 +648,131 @@ namespace Ev.Common.SqlHelper
                 if (i < propertyInfos.Count() - 1)
                     sb.AppendFormat(" and ");
             }
+        }
+        #endregion
+
+        #region [12、获取禁用外键约束]
+
+        /// <summary>
+        /// 获取禁用外键约束sql
+        /// </summary>
+        /// <returns></returns>
+        public static string GetDisabledForeignKeySql()
+        {
+            var disableSql = @"DECLARE
+        @nocheckSql NVARCHAR (MAX)
+    SET @nocheckSql = (
+        SELECT
+            'alter table dbo.[' + b.name + '] nocheck constraint [' + a.name + '];'
+        FROM
+            sysobjects a,
+            sysobjects b
+        WHERE
+            a.xtype = 'f'
+        AND a.parent_obj = b.id
+        AND b.xtype = 'u' FOR xml PATH('')
+	) select @nocheckSql";
+            var result = GetScalar(disableSql);
+            return result.ToString();
+        }
+        #endregion
+
+        #region [13、获取启用外键约束]
+
+        /// <summary>
+        /// 获取启用外键约束sql
+        /// </summary>
+        /// <returns></returns>
+        public static string GetEnabledForeignKeySql()
+        {
+            var disableSql = @"DECLARE
+		@checkSql NVARCHAR (MAX)
+	SET @checkSql = (
+		SELECT
+			'alter table dbo.[' + b.name + '] check constraint [' + a.name + '];'
+		FROM
+			sysobjects a,
+			sysobjects b
+		WHERE
+			a.xtype = 'f'
+		AND a.parent_obj = b.id
+		AND b.xtype = 'u' FOR xml PATH ('')
+	) select @checkSql";
+            var result = GetScalar(disableSql);
+            return result.ToString();
+        }
+
+        #endregion
+
+        #region [14、获取删除外键约束]
+
+        /// <summary>
+        /// 获取删除外键约束的SQL
+        /// </summary>
+        /// <returns></returns>
+        public static string GetDeleteForeignKeySql()
+        {
+            var disableSql = @"DECLARE 
+		@delSql nvarchar (MAX)
+        SET @delSql = (
+		SELECT
+			'alter table [' + O.name + '] drop constraint [' + F.name + '];'
+		FROM
+			sysobjects O,
+			sys.foreign_keys F
+		WHERE
+			F.parent_object_id = O.id FOR xml path ('')
+	) select @delSql ";
+            var result = GetScalar(disableSql);
+            return result.ToString();
+        }
+        #endregion
+
+        #region [15、获取重建外键约束]
+
+        /// <summary>
+        /// 获取重建外键约束SQL
+        /// </summary>
+        /// <returns></returns>
+        public static string GetReCreatForeignKeySql()
+        {
+            var disableSql = @"DECLARE 
+		@createSql nvarchar (MAX)
+        SET @createSql = (
+		SELECT
+			'ALTER TABLE [' + OBJECT_NAME(k.parent_object_id) + '] ADD CONSTRAINT [' + k.name + '] FOREIGN KEY ([' + COL_NAME(
+				k.parent_object_id,
+				c.parent_column_id
+			) + ']) REFERENCES [' + OBJECT_NAME(k.referenced_object_id) + ']([' + COL_NAME(
+				k.referenced_object_id,
+				key_index_id
+			) + '])' + CASE k.delete_referential_action
+		WHEN 0 THEN
+			''
+		WHEN 1 THEN
+			' ON DELETE CASCADE '
+		WHEN 2 THEN
+			' ON DELETE SET NULL '
+		WHEN 3 THEN
+			' ON DELETE SET DEFAULT '
+		END + CASE k.update_referential_action
+		WHEN 0 THEN
+			''
+		WHEN 1 THEN
+			' ON UPDATE CASCADE '
+		WHEN 2 THEN
+			' ON UPDATE SET NULL '
+		WHEN 3 THEN
+			' ON UPDATE SET DEFAULT'
+		END + ';'
+		FROM
+			sys.foreign_keys k,
+			sys.foreign_key_columns c
+		WHERE
+			c.constraint_object_id = k.object_id FOR xml path ('')
+	) select @createSql ";
+            var result = GetScalar(disableSql);
+            return result.ToString();
         }
         #endregion
     }

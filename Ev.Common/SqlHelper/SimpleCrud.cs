@@ -110,6 +110,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
                     if (values.Length > 0)
                     {
@@ -138,15 +139,18 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static int ExecuteCommand(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
         {
+
             SqlTransaction tranProducts = null;
             try
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
                     if (transaction)
                     {
                         tranProducts = connection.BeginTransaction();
+                        cmd.Transaction = tranProducts;
                     }
                     if (timeOut != null && timeOut > 0)
                     {
@@ -157,7 +161,6 @@ namespace Ev.Common.SqlHelper
                     {
                         cmd.Parameters.AddRange(paramtersList);
                     }
-                    cmd.Transaction = tranProducts;
                     var result = cmd.ExecuteNonQuery();
                     if (transaction)
                     {
@@ -171,7 +174,94 @@ namespace Ev.Common.SqlHelper
             {
                 if (transaction)
                 {
-                    tranProducts?.Rollback();
+                    try
+                    {
+                        tranProducts?.Rollback();
+                    }
+                    catch (Exception extwo)
+                    {
+                        var tempEx =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{extwo.InnerException?.Message}",
+                        extwo);
+                        throw tempEx;
+                    }
+
+                }
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+
+        /// <summary>
+        /// 执行查询
+        /// </summary>
+        /// <param name="sql"></param>
+        /// <param name="values"></param>
+        /// <param name="transaction"></param>
+        /// <param name="timeOut"></param>
+        /// <returns></returns>
+        public static bool ExecuteCommand(List<string> sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
+        {
+
+            SqlTransaction tranProducts = null;
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    SqlCommand cmd = new SqlCommand {Connection = connection};
+                    if (transaction)
+                    {
+                        tranProducts = connection.BeginTransaction();
+                        cmd.Transaction = tranProducts;
+                    }
+                    foreach (var tempSql in sql)
+                    {
+                        if (transaction)
+                        {
+                            cmd.Transaction = tranProducts;
+                        }
+                        cmd.CommandText = tempSql;
+                        cmd.ExecuteNonQuery();
+                    }
+                    if (timeOut != null && timeOut > 0)
+                    {
+                        cmd.CommandTimeout = (int)timeOut;
+                    }
+                    var paramtersList = values.ToArray();
+                    if (paramtersList.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(paramtersList);
+                    }
+                    if (transaction)
+                    {
+                        tranProducts.Commit();
+                    }
+                    return true;
+                }
+
+            }
+            catch (Exception ex)
+            {
+                if (transaction)
+                {
+                    try
+                    {
+                        tranProducts?.Rollback();
+                    }
+                    catch (Exception extwo)
+                    {
+                        var tempEx =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{extwo.InnerException?.Message}",
+                        extwo);
+                        throw tempEx;
+                    }
+
                 }
                 var exception =
                     new Exception(
@@ -192,6 +282,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     SqlCommand cmd = new SqlCommand(safeSql, connection);
                     var result = cmd.ExecuteScalar();
                     return result;
@@ -219,6 +310,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
                     if (values.Length > 0)
                     {
@@ -248,12 +340,11 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
-                {
-                    SqlCommand cmd = new SqlCommand(safeSql, connection);
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    return reader;
-                }
+                var connection = new SqlConnection(_connectionString);
+                connection.Open();
+                SqlCommand cmd = new SqlCommand(safeSql, connection);
+                SqlDataReader reader = cmd.ExecuteReader();
+                return reader;
             }
             catch (Exception ex)
             {
@@ -275,16 +366,15 @@ namespace Ev.Common.SqlHelper
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                var connection = new SqlConnection(_connectionString);
+                connection.Open();
+                SqlCommand cmd = new SqlCommand(sql, connection);
+                if (values.Length > 0)
                 {
-                    SqlCommand cmd = new SqlCommand(sql, connection);
-                    if (values.Length > 0)
-                    {
-                        cmd.Parameters.AddRange(values);
-                    }
-                    SqlDataReader reader = cmd.ExecuteReader();
-                    return reader;
+                    cmd.Parameters.AddRange(values);
                 }
+                SqlDataReader reader = cmd.ExecuteReader();
+                return reader;
             }
             catch (Exception ex)
             {
@@ -307,6 +397,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     DataSet ds = new DataSet();
                     SqlCommand cmd = new SqlCommand(safeSql, connection);
                     SqlDataAdapter da = new SqlDataAdapter(cmd);
@@ -336,6 +427,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     DataSet ds = new DataSet();
                     SqlCommand cmd = new SqlCommand(sql, connection);
                     if (values.Length > 0)
@@ -366,6 +458,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     DataSet ds = new DataSet();
                     SqlCommand cmd = new SqlCommand(sql, connection);
                     SqlDataAdapter da = new SqlDataAdapter(cmd);
@@ -396,6 +489,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     DataSet ds = new DataSet();
                     SqlCommand cmd = new SqlCommand(sql, connection);
                     if (values.Length > 0)
@@ -432,6 +526,7 @@ namespace Ev.Common.SqlHelper
             {
                 using (var connection = new SqlConnection(_connectionString))
                 {
+                    connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
                     if (transaction)
                     {
