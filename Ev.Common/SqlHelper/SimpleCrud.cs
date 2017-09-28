@@ -31,6 +31,13 @@ namespace Ev.Common.SqlHelper
     /// </summary>
     public static partial class SimpleCrud
     {
+        #region [1、全局变量]
+
+        /// <summary>
+        /// 链接字符串
+        /// </summary>
+        private static string _connectionString;
+
         /// <summary>
         /// 初始化函数
         /// </summary>
@@ -40,15 +47,6 @@ namespace Ev.Common.SqlHelper
                     ? ConfigurationManager.AppSettings["ConstrSQL"]
                     : _connectionString;
         }
-        #region [1、全局变量]
-
-        /// <summary>
-        /// 链接字符串
-        /// </summary>
-        private static string _connectionString;
-        #endregion
-
-        #region [2、共有方法]
 
         /// <summary>
         /// 设置当前链接字符串
@@ -70,6 +68,9 @@ namespace Ev.Common.SqlHelper
         {
             return _connectionString;
         }
+        #endregion
+
+        #region [2、共有方法]
 
         /// <summary>
         /// 执行sql
@@ -213,7 +214,7 @@ namespace Ev.Common.SqlHelper
                 using (var connection = new SqlConnection(_connectionString))
                 {
                     connection.Open();
-                    SqlCommand cmd = new SqlCommand {Connection = connection};
+                    SqlCommand cmd = new SqlCommand { Connection = connection };
                     if (transaction)
                     {
                         tranProducts = connection.BeginTransaction();
@@ -561,6 +562,139 @@ namespace Ev.Common.SqlHelper
                         $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
                         ex);
                 throw exception;
+            }
+        }
+
+        /// <summary> 
+        /// 批量更新数据(每批次5000) 
+        /// </summary>  
+        /// <param name="table"></param> 
+        public static void BulkUpdate(DataTable table)
+        {
+            if (table == null || table.Rows.Count < 1) return;
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                SqlCommand comm = conn.CreateCommand();
+                comm.CommandTimeout = 30;
+                comm.CommandType = CommandType.Text;
+                SqlDataAdapter adapter = new SqlDataAdapter(comm);
+                SqlCommandBuilder commandBulider = new SqlCommandBuilder(adapter);
+                commandBulider.ConflictOption = ConflictOption.OverwriteChanges;
+                try
+                {
+                    conn.Open();
+                    //设置批量更新的每次处理条数 
+                    adapter.UpdateBatchSize = 5000;
+                    adapter.SelectCommand.Transaction = conn.BeginTransaction();
+                    adapter.Update(table);
+                    adapter.SelectCommand.Transaction.Commit();
+                }
+                catch (Exception)
+                {
+                    adapter.SelectCommand?.Transaction?.Rollback();
+                    throw;
+                }
+                finally
+                {
+                    conn.Close();
+                    conn.Dispose();
+                }
+            }
+        }
+
+        /// <summary> 
+        /// 大批量插入数据(20000每批次) 
+        /// 已采用整体事物控制 
+        /// </summary> 
+        /// <param name="tableName">数据库服务器上目标表名</param> 
+        /// <param name="dt">含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable</param> 
+        public static void BulkCopy(string tableName, DataTable dt)
+        {
+            if (string.IsNullOrEmpty(tableName) || dt == null || dt.Rows.Count < 0) return;
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
+                    {
+                        bulkCopy.BatchSize = 20000;
+                        bulkCopy.BulkCopyTimeout = 60;
+                        bulkCopy.DestinationTableName = tableName;
+                        try
+                        {
+                            foreach (DataColumn col in dt.Columns)
+                            {
+                                bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+                            }
+                            bulkCopy.WriteToServer(dt);
+                            transaction.Commit();
+                        }
+                        catch (Exception)
+                        {
+                            transaction.Rollback();
+                            throw;
+                        }
+                        finally
+                        {
+                            conn.Close();
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 大批量插入数据(20000每批次) 
+        /// </summary>
+        /// <param name="dt">含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable</param>
+        public static void BulkCopy(DataTable dt)
+        {
+            BulkCopy(dt.TableName, dt);
+        }
+
+        /// <summary>
+        /// 批量插入数据
+        /// </summary>
+        /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
+        public static void BulkCopy(DataSet ds)
+        {
+            if (ds == null || ds.Tables.Count < 1) return;
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        foreach (DataTable dt in ds.Tables)
+                        {
+                            if (dt == null || dt.Rows.Count < 1 || string.IsNullOrEmpty(dt.TableName)) continue;
+                            using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
+                                )
+                            {
+                                bulkCopy.BatchSize = 20000;
+                                bulkCopy.BulkCopyTimeout = 60;
+                                bulkCopy.DestinationTableName = dt.TableName;
+                                foreach (DataColumn col in dt.Columns)
+                                {
+                                    bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+                                }
+                                bulkCopy.WriteToServer(dt);
+                            }
+                        }
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    }
+                }
             }
         }
         #endregion
