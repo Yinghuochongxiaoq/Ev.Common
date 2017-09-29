@@ -50,23 +50,27 @@ namespace Ev.Common.DataConvert
             {
                 if (propertyInfo.PropertyType.IsGenericType)
                 {
-                    var t = typeof(T).GetProperty(propertyInfo.Name).GetValue(entity, null);
-                    try
+                    var property = typeof(T).GetProperty(propertyInfo.Name);
+                    if (property != null)
                     {
-                        ICollection ilist = t as ICollection;
-                        if (ilist != null && ilist.Count > 0)
+                        var t = property.GetValue(entity, null);
+                        try
                         {
-                            foreach (object obj in ilist)
+                            ICollection ilist = t as ICollection;
+                            if (ilist != null && ilist.Count > 0)
                             {
-                                errorMessage = typeof(T).Name + " data template has been used by type:" + obj.GetType().FullName + " you can't delete it.";
-                                break;
+                                foreach (object obj in ilist)
+                                {
+                                    errorMessage = typeof(T).Name + " data template has been used by type:" + obj.GetType().FullName + " you can't delete it.";
+                                    break;
+                                }
                             }
-                        }
 
-                    }
-                    catch (Exception exception)
-                    {
-                        errorMessage = exception.Message + exception.InnerException?.Message;
+                        }
+                        catch (Exception exception)
+                        {
+                            errorMessage = exception.Message + exception.InnerException?.Message;
+                        }
                     }
                 }
             }
@@ -637,10 +641,20 @@ namespace Ev.Common.DataConvert
         private Load _handler;
         private DataTableEntityBuilder() { }
 
+        /// <summary>
+        /// Creat build new method and cache.
+        /// </summary>
+        /// <param name="dataRecord"></param>
+        /// <returns></returns>
         public TEntity Build(DataRow dataRecord)
         {
             return _handler(dataRecord);
         }
+        /// <summary>
+        /// Creat build new method for new object.
+        /// </summary>
+        /// <param name="dataRecord"></param>
+        /// <returns></returns>
         public static DataTableEntityBuilder<TEntity> CreateBuilder(DataRow dataRecord)
         {
             DataTableEntityBuilder<TEntity> dynamicBuilder = new DataTableEntityBuilder<TEntity>();
@@ -655,7 +669,7 @@ namespace Ev.Common.DataConvert
             {
                 PropertyInfo propertyInfo = typeof(TEntity).GetProperty(dataRecord.Table.Columns[i].ColumnName);
                 Label endIfLabel = generator.DefineLabel();
-                if (propertyInfo != null && propertyInfo.GetSetMethod() != null)
+                if (propertyInfo?.GetSetMethod() != null)
                 {
                     generator.Emit(OpCodes.Ldarg_0);
                     generator.Emit(OpCodes.Ldc_I4, i);
