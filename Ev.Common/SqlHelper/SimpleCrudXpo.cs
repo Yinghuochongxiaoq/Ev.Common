@@ -22,6 +22,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using DevExpress.Xpo;
+using Ev.Common.DataConvert;
 using Microsoft.CSharp.RuntimeBinder;
 
 namespace Ev.Common.SqlHelper
@@ -773,6 +774,88 @@ namespace Ev.Common.SqlHelper
 	) select @createSql ";
             var result = GetScalar(disableSql);
             return result.ToString();
+        }
+        #endregion
+
+        #region [16、获得数据]
+
+        /// <summary>
+        /// 获取单条记录
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="searchModel">主键Id</param>
+        /// <returns></returns>
+        public static T Get<T>(object searchModel) where T : class, new()
+        {
+            var currenttype = typeof (T);
+            var idProps = GetIdProperties(currenttype).ToList();
+            if (!idProps.Any())
+                throw new ArgumentException("Get<T> only supports an entity with a [Key] or Id property");
+            var name = GetTableName(currenttype);
+            var sb = new StringBuilder();
+            sb.Append("select ");
+            BuildSelect(sb, GetScaffoldableProperties(currenttype));
+            sb.AppendFormat(" from {0} where ", name);
+
+            for (int i = 0; i < idProps.Count; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(" and ");
+                }
+                sb.AppendFormat("{0}=@{1}", GetColumnName(idProps[i]), idProps[i].Name);
+            }
+            List<SqlParameter> dynParms = new List<SqlParameter>();
+            if (idProps.Count == 1)
+            {
+                var prop = idProps.First();
+                var propertyInfo = searchModel.GetType().GetProperty(prop.Name);
+                if (propertyInfo != null)
+                    dynParms.Add(new SqlParameter
+                    {
+                        ParameterName = "@" + prop.Name,
+                        Value = propertyInfo.GetValue(searchModel, null)
+                    });
+            }
+            else
+            {
+                dynParms.AddRange(from prop in idProps
+                    let propertyInfo = searchModel.GetType().GetProperty(prop.Name)
+                    where propertyInfo != null
+                    select new SqlParameter
+                    {
+                        ParameterName = "@" + prop.Name,
+                        Value = propertyInfo.GetValue(searchModel, null)
+                    });
+            }
+            var dt = GetDataTable(sb.ToString(), dynParms.ToArray());
+            var resultModel = DataTypeConvertHelper.ToList<T>(dt);
+            return resultModel?.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 获得查询结果
+        /// </summary>
+        /// <param name="sb"></param>
+        /// <param name="props"></param>
+        private static void BuildSelect(StringBuilder sb, IEnumerable<PropertyInfo> props)
+        {
+            var propertyInfos = props as IList<PropertyInfo> ?? props.ToList();
+            if (!propertyInfos.Any()) return;
+            var addedAny = false;
+            for (int i = 0; i < propertyInfos.Count(); i++)
+            {
+                if(!propertyInfos.ElementAt(i).CanWrite) continue;
+                if (propertyInfos.ElementAt(i).GetCustomAttributes(true).Any(attr => attr.GetType().Name == typeof(NonPersistentAttribute).Name)) { continue; }
+                if (addedAny)
+                {
+                    sb.Append(",");
+                }
+                sb.Append(GetColumnName(propertyInfos.ElementAt(i)));
+                if (propertyInfos.ElementAt(i).GetCustomAttributes(true).SingleOrDefault(attr => attr.GetType().Name == typeof(ColumnAttribute).Name) != null)
+                    sb.Append(" as " + Encapsulate(propertyInfos.ElementAt(i).Name));
+                addedAny = true;
+            }
         }
         #endregion
     }
