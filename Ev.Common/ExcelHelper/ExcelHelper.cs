@@ -88,14 +88,15 @@ namespace Ev.Common.ExcelHelper
                 conn = new OleDbConnection(connStr);
                 conn.Open();
 
-                var dtSheetName = conn.GetOleDbSchemaTable(OleDbSchemaGuid.Tables, new object[] { null, null, null, "TABLE" });
+                var dtSheetName = conn.GetOleDbSchemaTable(OleDbSchemaGuid.Tables,
+                    new object[] {null, null, null, "TABLE"});
                 if (dtSheetName == null) return null;
                 // 初始化适配器
                 da = new OleDbDataAdapter();
                 for (int i = 0; i < dtSheetName.Rows.Count; i++)
                 {
                     // 获取数据源的表定义元数据
-                    var sheetName = (string)dtSheetName.Rows[i]["TABLE_NAME"];
+                    var sheetName = (string) dtSheetName.Rows[i]["TABLE_NAME"];
                     if (sheetName.Contains("$") && !sheetName.Replace("'", "").EndsWith("$"))
                     {
                         continue;
@@ -105,6 +106,10 @@ namespace Ev.Common.ExcelHelper
                     da.Fill(dsItem, sheetName);
                     ds.Tables.Add(dsItem.Tables[0].Copy());
                 }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
             }
             finally
             {
