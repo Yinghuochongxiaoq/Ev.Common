@@ -70,13 +70,13 @@ namespace Ev.Common.SqlHelper
         }
         #endregion
 
-        #region [2、共有方法]
+        #region [2、Execute执行方法]
 
         /// <summary>
         /// 执行sql
         /// </summary>
-        /// <param name="safeSql"></param>
-        /// <returns></returns>
+        /// <param name="safeSql">SQL命令</param>
+        /// <returns>执行结果影响行数</returns>
         public static int ExecuteCommand(string safeSql)
         {
             try
@@ -103,8 +103,8 @@ namespace Ev.Common.SqlHelper
         /// 带参数的执行命令
         /// </summary>
         /// <param name="sql">SQL命令</param>
-        /// <param name="values">返回VALUE值</param>
-        /// <returns></returns>
+        /// <param name="values">参数化参数</param>
+        /// <returns>执行结果影响行数</returns>
         public static int ExecuteCommand(string sql, params SqlParameter[] values)
         {
             try
@@ -133,11 +133,11 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 执行查询
         /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="values"></param>
-        /// <param name="transaction"></param>
-        /// <param name="timeOut"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="values">参数化参数</param>
+        /// <param name="transaction">是否事务执行：true:事务执行（sql语句为单条事务语句），false:非事务执行</param>
+        /// <param name="timeOut">命令超时时间 （以秒为单位）默认值为 30 秒</param>
+        /// <returns>执行结果影响行数</returns>
         public static int ExecuteCommand(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
         {
 
@@ -200,11 +200,11 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 执行查询
         /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="values"></param>
-        /// <param name="transaction"></param>
-        /// <param name="timeOut"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="values">参数化参数</param>
+        /// <param name="transaction">是否事务执行：true:事务执行（sql语句为单条事务语句），false:非事务执行</param>
+        /// <param name="timeOut">命令超时时间 （以秒为单位）默认值为 30 秒</param>
+        /// <returns>执行结果影响行数</returns>
         public static bool ExecuteCommand(List<string> sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
         {
 
@@ -271,12 +271,14 @@ namespace Ev.Common.SqlHelper
                 throw exception;
             }
         }
+        #endregion
 
+        #region [3、Scalar执行方法]
         /// <summary>
-        /// 返回影响记录数
+        /// 执行只返回单行单列的值
         /// </summary>
-        /// <param name="safeSql"></param>
-        /// <returns></returns>
+        /// <param name="safeSql">SQL命令</param>
+        /// <returns>执行只返回单行单列的值</returns>
         public static object GetScalar(string safeSql)
         {
             try
@@ -302,9 +304,9 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 执行只返回单行单列的值
         /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="values"></param>
-        /// <returns></returns>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="values">参数化参数</param>
+        /// <returns>执行只返回单行单列的值</returns>
         public static object GetScalar(string sql, params SqlParameter[] values)
         {
             try
@@ -333,194 +335,14 @@ namespace Ev.Common.SqlHelper
         }
 
         /// <summary>
-        /// 获取一个读取器
+        /// 执行只返回单行单列的值
         /// </summary>
-        /// <param name="safeSql"></param>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="values">参数化参数</param>
+        /// <param name="transaction">是否事务</param>
+        /// <param name="timeOut">命令超时时间（以秒为单位）默认值为 30 秒</param>
         /// <returns></returns>
-        public static SqlDataReader GetReader(string safeSql)
-        {
-            try
-            {
-                var connection = new SqlConnection(_connectionString);
-                connection.Open();
-                SqlCommand cmd = new SqlCommand(safeSql, connection);
-                SqlDataReader reader = cmd.ExecuteReader();
-                return reader;
-            }
-            catch (Exception ex)
-            {
-                var exception =
-                    new Exception(
-                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
-                        ex);
-                throw exception;
-            }
-        }
-
-        /// <summary>
-        /// 获取一个读取器
-        /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="values"></param>
-        /// <returns></returns>
-        public static SqlDataReader GetReader(string sql, params SqlParameter[] values)
-        {
-            try
-            {
-                var connection = new SqlConnection(_connectionString);
-                connection.Open();
-                SqlCommand cmd = new SqlCommand(sql, connection);
-                if (values.Length > 0)
-                {
-                    cmd.Parameters.AddRange(values);
-                }
-                SqlDataReader reader = cmd.ExecuteReader();
-                return reader;
-            }
-            catch (Exception ex)
-            {
-                var exception =
-                    new Exception(
-                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
-                        ex);
-                throw exception;
-            }
-        }
-
-        /// <summary>
-        /// 无参数sql返回DataTable
-        /// </summary>
-        /// <param name="safeSql"></param>
-        /// <returns></returns>
-        public static DataTable GetDataTable(string safeSql)
-        {
-            try
-            {
-                using (var connection = new SqlConnection(_connectionString))
-                {
-                    connection.Open();
-                    DataSet ds = new DataSet();
-                    SqlCommand cmd = new SqlCommand(safeSql, connection);
-                    SqlDataAdapter da = new SqlDataAdapter(cmd);
-                    da.Fill(ds);
-                    return ds.Tables[0];
-                }
-            }
-            catch (Exception ex)
-            {
-                var exception =
-                    new Exception(
-                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
-                        ex);
-                throw exception;
-            }
-        }
-
-        /// <summary>
-        /// 带参数sql返回DataTable
-        /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="values"></param>
-        /// <returns></returns>
-        public static DataTable GetDataTable(string sql, params SqlParameter[] values)
-        {
-            try
-            {
-                using (var connection = new SqlConnection(_connectionString))
-                {
-                    connection.Open();
-                    DataSet ds = new DataSet();
-                    SqlCommand cmd = new SqlCommand(sql, connection);
-                    if (values.Length > 0)
-                    {
-                        cmd.Parameters.AddRange(values);
-                    }
-                    SqlDataAdapter da = new SqlDataAdapter(cmd);
-                    da.Fill(ds);
-                    return ds.Tables[0];
-                }
-            }
-            catch (Exception ex)
-            {
-                var exception =
-                    new Exception(
-                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
-                        ex);
-                throw exception;
-            }
-        }
-
-        /// <summary>
-        /// 获得数据集
-        /// </summary>
-        public static DataSet GetDataSet(string sql, string table)
-        {
-            try
-            {
-                using (var connection = new SqlConnection(_connectionString))
-                {
-                    connection.Open();
-                    DataSet ds = new DataSet();
-                    SqlCommand cmd = new SqlCommand(sql, connection);
-                    SqlDataAdapter da = new SqlDataAdapter(cmd);
-                    da.Fill(ds, table);
-                    return ds;
-                }
-            }
-            catch (Exception ex)
-            {
-                var exception =
-                    new Exception(
-                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
-                        ex);
-                throw exception;
-            }
-        }
-
-        /// <summary>
-        /// 获取数据集
-        /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="table"></param>
-        /// <param name="values"></param>
-        /// <returns></returns>
-        public static DataSet GetDataSet(string sql, string table, params SqlParameter[] values)
-        {
-            try
-            {
-                using (var connection = new SqlConnection(_connectionString))
-                {
-                    connection.Open();
-                    DataSet ds = new DataSet();
-                    SqlCommand cmd = new SqlCommand(sql, connection);
-                    if (values.Length > 0)
-                    {
-                        cmd.Parameters.AddRange(values);
-                    }
-                    SqlDataAdapter da = new SqlDataAdapter(cmd);
-                    da.Fill(ds, table);
-                    return ds;
-                }
-            }
-            catch (Exception ex)
-            {
-                var exception =
-                    new Exception(
-                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
-                        ex);
-                throw exception;
-            }
-        }
-
-        /// <summary>
-        /// 执行查询
-        /// </summary>
-        /// <param name="sql"></param>
-        /// <param name="values"></param>
-        /// <param name="transaction"></param>
-        /// <param name="timeOut"></param>
-        /// <returns></returns>
-        public static dynamic Query(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
+        public static dynamic GetScalar(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
         {
             SqlTransaction tranProducts = null;
             try
@@ -564,7 +386,196 @@ namespace Ev.Common.SqlHelper
                 throw exception;
             }
         }
+        #endregion
 
+        #region [4、Reader执行方法]
+        /// <summary>
+        /// 获取一个读取器
+        /// </summary>
+        /// <param name="safeSql">SQL命令</param>
+        /// <returns>获取一个读取器</returns>
+        public static SqlDataReader GetReader(string safeSql)
+        {
+            try
+            {
+                var connection = new SqlConnection(_connectionString);
+                connection.Open();
+                SqlCommand cmd = new SqlCommand(safeSql, connection);
+                SqlDataReader reader = cmd.ExecuteReader();
+                return reader;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+
+        /// <summary>
+        /// 获取一个读取器
+        /// </summary>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="values">参数化参数</param>
+        /// <returns>获取一个读取器</returns>
+        public static SqlDataReader GetReader(string sql, params SqlParameter[] values)
+        {
+            try
+            {
+                var connection = new SqlConnection(_connectionString);
+                connection.Open();
+                SqlCommand cmd = new SqlCommand(sql, connection);
+                if (values.Length > 0)
+                {
+                    cmd.Parameters.AddRange(values);
+                }
+                SqlDataReader reader = cmd.ExecuteReader();
+                return reader;
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+        #endregion
+
+        #region [5、执行查询操作DataTable DataSet]
+        /// <summary>
+        /// 无参数sql返回DataTable
+        /// </summary>
+        /// <param name="safeSql">SQL命令</param>
+        /// <returns>结果集合</returns>
+        public static DataTable GetDataTable(string safeSql)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(safeSql, connection);
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    return ds.Tables[0];
+                }
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{safeSql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+
+        /// <summary>
+        /// 带参数sql返回DataTable
+        /// </summary>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="values">参数化参数</param>
+        /// <returns>结果集合</returns>
+        public static DataTable GetDataTable(string sql, params SqlParameter[] values)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (values.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(values);
+                    }
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds);
+                    return ds.Tables[0];
+                }
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+
+        /// <summary>
+        /// 获得数据集
+        /// </summary>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="table">表名称</param>
+        /// <returns>结果集合</returns>
+        public static DataSet GetDataSet(string sql, string table)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds, table);
+                    return ds;
+                }
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+
+        /// <summary>
+        /// 获取数据集
+        /// </summary>
+        /// <param name="sql">SQL命令</param>
+        /// <param name="table">表名称</param>
+        /// <param name="values">参数化参数</param>
+        /// <returns></returns>
+        public static DataSet GetDataSet(string sql, string table, params SqlParameter[] values)
+        {
+            try
+            {
+                using (var connection = new SqlConnection(_connectionString))
+                {
+                    connection.Open();
+                    DataSet ds = new DataSet();
+                    SqlCommand cmd = new SqlCommand(sql, connection);
+                    if (values.Length > 0)
+                    {
+                        cmd.Parameters.AddRange(values);
+                    }
+                    SqlDataAdapter da = new SqlDataAdapter(cmd);
+                    da.Fill(ds, table);
+                    return ds;
+                }
+            }
+            catch (Exception ex)
+            {
+                var exception =
+                    new Exception(
+                        $" Execute Sql command:{sql} maybe error,please check.Exception error message is:{ex.Message},innerExcetpion error message is :{ex.InnerException?.Message}",
+                        ex);
+                throw exception;
+            }
+        }
+        #endregion
+
+        #region [6、批量操作]
         /// <summary> 
         /// 批量更新数据(每批次5000) 
         /// </summary>  
@@ -699,7 +710,7 @@ namespace Ev.Common.SqlHelper
         }
         #endregion
 
-        #region [3、删除表数据SQL Code]
+        #region [7、删除Table,View数据SQL Code]
 
         /// <summary>
         /// 根据表或视图名删除一个表或视图数据

@@ -141,7 +141,7 @@ namespace Ev.Common.SqlHelper
                 keyHasPredefinedValue = true;
             }
             var paramters = ObjectToParameters(entityToInsert);
-            var r = Query(sb.ToString(), paramters, transaction, commandTimeout);
+            var r = GetScalar(sb.ToString(), paramters, transaction, commandTimeout);
             if (keytype == typeof(Guid) || keyHasPredefinedValue)
             {
                 return (TKey)idProps.First().GetValue(entityToInsert, null);

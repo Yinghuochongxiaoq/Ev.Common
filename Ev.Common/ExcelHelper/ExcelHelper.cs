@@ -109,6 +109,7 @@ namespace Ev.Common.ExcelHelper
             }
             catch (Exception ex)
             {
+                // ReSharper disable once PossibleIntendedRethrow
                 throw ex;
             }
             finally
