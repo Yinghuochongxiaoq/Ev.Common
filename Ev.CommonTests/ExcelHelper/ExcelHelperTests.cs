@@ -103,6 +103,15 @@ namespace Ev.Common.ExcelHelper.Tests
         }
 
         [TestMethod]
+        public void ExcelToDataSetTest()
+        {
+            var filePath = "..\\..\\TestUseFile\\TestImportDataSet.xlsx";
+            var excelHelper = new ExcelHelper(filePath);
+            var dataSet = excelHelper.ExcelToDataSet(true);
+            Assert.AreEqual(dataSet.Tables.Count, 3);
+        }
+
+        [TestMethod]
         public void ReadExcelToDataSetTest()
         {
             var filePath = "..\\..\\TestUseFile\\BasicTestData.xlsx";

@@ -291,5 +291,102 @@ namespace Ev.Common.ExcelHelper
             }
         }
         #endregion
+
+        #region [5、excel导入DataSet中]
+        /// <summary>
+        /// excel导入DataSet中
+        /// </summary>
+        /// <param name="isFirstRowColumn">第一行是否是DataTable的列名</param>
+        /// <author>FreshMan</author>
+        /// <creattime>2015-11-19</creattime>
+        /// <returns>excel中的每一个sheet作为一个DataTable添加到DataSet中并返回</returns>
+        public DataSet ExcelToDataSet(bool isFirstRowColumn)
+        {
+            var dataSet = new DataSet();
+            if (string.IsNullOrEmpty(_fileName)) return dataSet;
+
+            try
+            {
+                #region 读取数据文件流
+
+                _fs = new FileStream(_fileName, FileMode.Open, FileAccess.Read);
+                // 2007版本
+                if (_fileName.EndsWith(".xlsx")) _workbook = new XSSFWorkbook(_fs);
+                // 2003版本
+                else if (_fileName.EndsWith(".xls")) _workbook = new HSSFWorkbook(_fs);
+                else return dataSet;
+                #endregion
+
+                #region 循环读取工作表中的数据
+                //获得表总数
+                var sheetsNum = _workbook.NumberOfSheets;
+                if (sheetsNum <= 0) return dataSet;
+                for (var sheetItem = 0; sheetItem < sheetsNum; sheetItem++)
+                {
+                    var data = new DataTable();
+                    var sheet = _workbook.GetSheetAt(sheetItem);
+                    if (sheet == null) continue;
+                    data.TableName = sheet.SheetName;
+                    IRow firstRow = sheet.GetRow(0);
+                    //一行最后一个cell的编号 即总的列数
+                    int cellCount = firstRow.LastCellNum;
+                    int startRow;
+
+                    #region 创建数据列
+
+                    if (isFirstRowColumn)
+                    {
+                        for (int i = firstRow.FirstCellNum; i < cellCount; ++i)
+                        {
+                            var column = new DataColumn(firstRow.GetCell(i).StringCellValue);
+                            data.Columns.Add(column);
+                        }
+                        startRow = sheet.FirstRowNum + 1;
+                    }
+                    else
+                    {
+                        for (int i = firstRow.FirstCellNum; i < cellCount; ++i)
+                        {
+                            var column = new DataColumn();
+                            data.Columns.Add(column);
+                        }
+                        startRow = sheet.FirstRowNum;
+                    }
+
+                    #endregion
+
+                    #region 填充数据
+
+                    //最后一列的标号
+                    var rowCount = sheet.LastRowNum;
+                    for (var i = startRow; i <= rowCount; ++i)
+                    {
+                        var row = sheet.GetRow(i);
+                        //没有数据的行默认是null
+                        if (row == null) continue;
+
+                        var dataRow = data.NewRow();
+                        for (int j = row.FirstCellNum; j < cellCount; ++j)
+                        {
+                            if (row.GetCell(j) == null) continue;
+                            var str = row.GetCell(j).ToString();
+                            dataRow[j] = str;
+                        }
+                        data.Rows.Add(dataRow);
+                    }
+                    #endregion
+
+                    dataSet.Tables.Add(data);
+                }
+                #endregion
+
+                return dataSet;
+            }
+            catch (Exception)
+            {
+                return dataSet;
+            }
+        }
+        #endregion
     }
 }

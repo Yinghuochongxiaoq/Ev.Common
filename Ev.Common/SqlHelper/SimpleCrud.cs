@@ -16,12 +16,14 @@
 */
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Ev.Common.CommonModel;
 
 namespace Ev.Common.SqlHelper
@@ -577,7 +579,7 @@ namespace Ev.Common.SqlHelper
 
         #region [6、批量操作]
         /// <summary> 
-        /// 批量更新数据(每批次5000) 
+        /// 批量更新数据
         /// </summary>  
         /// <param name="table"></param> 
         public static void BulkUpdate(DataTable table)
@@ -595,7 +597,7 @@ namespace Ev.Common.SqlHelper
                 {
                     conn.Open();
                     //设置批量更新的每次处理条数 
-                    adapter.UpdateBatchSize = 5000;
+                    //adapter.UpdateBatchSize = 5000;
                     adapter.SelectCommand.Transaction = conn.BeginTransaction();
                     adapter.Update(table);
                     adapter.SelectCommand.Transaction.Commit();
@@ -614,7 +616,7 @@ namespace Ev.Common.SqlHelper
         }
 
         /// <summary> 
-        /// 大批量插入数据(20000每批次) 
+        /// 大批量插入数据 
         /// 已采用整体事物控制 
         /// </summary> 
         /// <param name="tableName">数据库服务器上目标表名</param> 
@@ -629,7 +631,7 @@ namespace Ev.Common.SqlHelper
                 {
                     using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
                     {
-                        bulkCopy.BatchSize = 20000;
+                        //bulkCopy.BatchSize = 20000;
                         bulkCopy.BulkCopyTimeout = 60;
                         bulkCopy.DestinationTableName = tableName;
                         try
@@ -656,7 +658,7 @@ namespace Ev.Common.SqlHelper
         }
 
         /// <summary>
-        /// 大批量插入数据(20000每批次) 
+        /// 大批量插入数据
         /// </summary>
         /// <param name="dt">含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable</param>
         public static void BulkCopy(DataTable dt)
@@ -679,6 +681,51 @@ namespace Ev.Common.SqlHelper
                     try
                     {
                         foreach (DataTable dt in ds.Tables)
+                        {
+                            if (dt == null || dt.Rows.Count < 1 || string.IsNullOrEmpty(dt.TableName)) continue;
+                            using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
+                                )
+                            {
+                                //bulkCopy.BatchSize = 20000;
+                                bulkCopy.BulkCopyTimeout = 60;
+                                bulkCopy.DestinationTableName = dt.TableName;
+                                foreach (DataColumn col in dt.Columns)
+                                {
+                                    bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+                                }
+                                bulkCopy.WriteToServer(dt);
+                            }
+                        }
+                        transaction.Commit();
+                    }
+                    catch (Exception)
+                    {
+                        transaction.Rollback();
+                        throw;
+                    }
+                    finally
+                    {
+                        conn.Close();
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// 批量插入数据
+        /// </summary>
+        /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
+        public static void BulkCopy(IList<DataTable> ds)
+        {
+            if (ds == null || !ds.Any()) return;
+            using (SqlConnection conn = new SqlConnection(_connectionString))
+            {
+                conn.Open();
+                using (SqlTransaction transaction = conn.BeginTransaction())
+                {
+                    try
+                    {
+                        foreach (DataTable dt in ds)
                         {
                             if (dt == null || dt.Rows.Count < 1 || string.IsNullOrEmpty(dt.TableName)) continue;
                             using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
@@ -707,6 +754,16 @@ namespace Ev.Common.SqlHelper
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// 批量插入数据
+        /// </summary>
+        /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
+        public static void BulkCopy(ConcurrentBag<DataTable> ds)
+        {
+            if (ds == null || !ds.Any()) return;
+            Parallel.ForEach(ds, BulkCopy);
         }
         #endregion
 

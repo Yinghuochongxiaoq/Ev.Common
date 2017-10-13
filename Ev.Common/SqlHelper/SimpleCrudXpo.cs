@@ -17,6 +17,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Reflection;
@@ -787,7 +788,7 @@ namespace Ev.Common.SqlHelper
         /// <returns></returns>
         public static T Get<T>(object searchModel) where T : class, new()
         {
-            var currenttype = typeof (T);
+            var currenttype = typeof(T);
             var idProps = GetIdProperties(currenttype).ToList();
             if (!idProps.Any())
                 throw new ArgumentException("Get<T> only supports an entity with a [Key] or Id property");
@@ -820,13 +821,13 @@ namespace Ev.Common.SqlHelper
             else
             {
                 dynParms.AddRange(from prop in idProps
-                    let propertyInfo = searchModel.GetType().GetProperty(prop.Name)
-                    where propertyInfo != null
-                    select new SqlParameter
-                    {
-                        ParameterName = "@" + prop.Name,
-                        Value = propertyInfo.GetValue(searchModel, null)
-                    });
+                                  let propertyInfo = searchModel.GetType().GetProperty(prop.Name)
+                                  where propertyInfo != null
+                                  select new SqlParameter
+                                  {
+                                      ParameterName = "@" + prop.Name,
+                                      Value = propertyInfo.GetValue(searchModel, null)
+                                  });
             }
             var dt = GetDataTable(sb.ToString(), dynParms.ToArray());
             var resultModel = DataTypeConvertHelper.ToList<T>(dt);
@@ -845,7 +846,7 @@ namespace Ev.Common.SqlHelper
             var addedAny = false;
             for (int i = 0; i < propertyInfos.Count(); i++)
             {
-                if(!propertyInfos.ElementAt(i).CanWrite) continue;
+                if (!propertyInfos.ElementAt(i).CanWrite) continue;
                 if (propertyInfos.ElementAt(i).GetCustomAttributes(true).Any(attr => attr.GetType().Name == typeof(NonPersistentAttribute).Name)) { continue; }
                 if (addedAny)
                 {
@@ -856,6 +857,229 @@ namespace Ev.Common.SqlHelper
                     sb.Append(" as " + Encapsulate(propertyInfos.ElementAt(i).Name));
                 addedAny = true;
             }
+        }
+        #endregion
+
+        #region [17、存储实体类型转换]
+
+        /// <summary>
+        /// 类型中的字段缓存
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>> SaveTypePropertyCaches = new ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>>();
+
+        /// <summary>
+        /// 数据库前缀
+        /// </summary>
+        private static string _saveencapsulation = "{0}";
+
+        /// <summary>
+        /// <para>集合转化为表格</para>
+        /// <para>T中应该只包含值类型，对应的DataTable自动匹配列名相同的属性</para>
+        /// </summary>
+        /// <typeparam name="T">类型中不应该包含有引用类型</typeparam>
+        /// <param name="entityList">转换的集合</param> 
+        /// <author>FreshMan</author>
+        /// <creattime>2017-06-26</creattime>
+        /// <returns></returns>
+        public static DataTable ConvertToDataTable<T>(IList<T> entityList)
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var type = entityList.First().GetType();
+            var dt = CreateTable(type);
+            var properties = GetProperties(type);
+            foreach (T obj in entityList)
+            {
+                DataRow row = dt.NewRow();
+                foreach (var property in properties)
+                {
+                    row[property.Name] = GetReflectorValue(property, obj);
+                }
+                dt.Rows.Add(row);
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// <para>集合转化为表格</para>
+        /// <para>T中应该只包含值类型，对应的DataTable自动匹配列名相同的属性</para>
+        /// </summary>
+        /// <typeparam name="T">类型中不应该包含有引用类型</typeparam>
+        /// <param name="entityList">转换的集合</param> 
+        /// <author>FreshMan</author>
+        /// <creattime>2017-06-26</creattime>
+        /// <returns></returns>
+        public static DataTable ConvertToDataTable<T>(ConcurrentBag<T> entityList)
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var type = entityList.First().GetType();
+            var dt = CreateTable(type);
+            var properties = GetProperties(type);
+            foreach (T obj in entityList)
+            {
+                DataRow row = dt.NewRow();
+                foreach (var property in properties)
+                {
+                    row[property.Name] = GetReflectorValue(property, obj);
+                }
+                dt.Rows.Add(row);
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 获取指定类型属性的值
+        /// </summary>
+        /// <param name="property"></param>
+        /// <param name="obj"></param>
+        /// <returns></returns>
+        private static object GetReflectorValue(PropertyInfo property, object obj)
+        {
+            object paramsValue = null;
+            if (property.PropertyType.Name == "String" || property.PropertyType.IsValueType)
+            {
+                if (property.PropertyType == typeof(DateTime))
+                {
+                    if (((DateTime)property.GetValue(obj, null)) < new DateTime(1900, 1, 1))
+                    {
+                        paramsValue = DBNull.Value;
+                    }
+                    else
+                    {
+                        paramsValue = property.GetValue(obj, null) ?? DBNull.Value;
+                    }
+                }
+                else if (typeof(Enum).IsAssignableFrom(property.PropertyType))
+                {
+                    paramsValue = Convert.ToInt32(property.GetValue(obj, null));
+                }
+                else
+                {
+                    paramsValue = property.GetValue(obj, null) ?? DBNull.Value;
+                }
+            }
+            else
+            {
+                var entityValue = property.GetValue(obj, null);
+                if (entityValue != null)
+                {
+                    IEnumerable<PropertyInfo> referenceProps = property.PropertyType.GetProperties();
+                    var referenceKey =
+                        referenceProps.FirstOrDefault(
+                            f => f.GetCustomAttributes(typeof(KeyAttribute), true).Length > 0);
+                    if (referenceKey != null)
+                    {
+                        var tempParamsValue = referenceKey.GetValue(entityValue, null);
+                        if (referenceKey.PropertyType.Name == typeof(string).Name ||
+                            referenceKey.PropertyType.Name == typeof(Guid).Name)
+                        {
+                            paramsValue = tempParamsValue ?? DBNull.Value;
+                        }
+                        else
+                        {
+                            paramsValue = Convert.ToInt64(tempParamsValue) < 1 ? DBNull.Value : tempParamsValue;
+                        }
+                    }
+                }
+                else
+                {
+                    paramsValue = DBNull.Value;
+                }
+            }
+            return paramsValue;
+        }
+
+        /// <summary>
+        /// <para>创建表格</para>
+        /// </summary>
+        /// <param name="type"></param>
+        /// <param name="tableName"></param>
+        /// <author>FreshMan</author>
+        /// <creattime>2017-06-26</creattime>
+        /// <returns></returns>
+        private static DataTable CreateTable(Type type, string tableName = null)
+        {
+            IEnumerable<PropertyInfo> typeProperCaches = GetProperties(type);
+            if (string.IsNullOrEmpty(tableName))
+            {
+                tableName = ResolveSaveTableName(type);
+            }
+            var dt = new DataTable(tableName);
+
+            foreach (var prop in typeProperCaches)
+            {
+                dt.Columns.Add(prop.Name);
+            }
+            return dt.Clone();
+        }
+
+        /// <summary>
+        /// 获取类型的存储属性
+        /// </summary>
+        /// <param name="type">type</param>
+        /// <returns></returns>
+        private static ConcurrentBag<PropertyInfo> GetProperties(Type type)
+        {
+            string key = $"{type.FullName}";
+            ConcurrentBag<PropertyInfo> typeProperCaches;
+            if (SaveTypePropertyCaches.TryGetValue(key, out typeProperCaches))
+            {
+                return typeProperCaches;
+            }
+            var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            typeProperCaches = new ConcurrentBag<PropertyInfo>(
+                props.Where(
+                    e =>
+                        e.CanWrite
+                        && !e.PropertyType.IsGenericType
+                        && e.GetCustomAttributes(typeof(NonPersistentAttribute), true).Length < 1
+                        && (e.PropertyType.IsValueType
+                            || (e.PropertyType.Name == "String"
+                                || e.GetCustomAttributes(typeof(SaveEntityAttribute), true).Length > 0))
+                        && (e.GetCustomAttributes(typeof(KeyAttribute), true).Length < 1
+                            || e.GetCustomAttributes(typeof(IdentitySeedAttribute), true).Length > 0)
+                    ));
+            SaveTypePropertyCaches.TryAdd(key, typeProperCaches);
+            return typeProperCaches;
+        }
+
+        /// <summary>
+        /// 获取数据表名称
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        private static string ResolveSaveTableName(Type type)
+        {
+            var tableName = EncapsulateSaveModel(type.Name);
+
+            var tableattr = type.GetCustomAttributes(true).SingleOrDefault(attr => attr.GetType().Name == typeof(TableAttribute).Name) as dynamic;
+            if (tableattr != null)
+            {
+                tableName = EncapsulateSaveModel(tableattr.Name);
+                try
+                {
+                    if (!string.IsNullOrEmpty(tableattr.Schema))
+                    {
+                        string schemaName = EncapsulateSaveModel(tableattr.Schema);
+                        tableName = $"{schemaName}.{tableName}";
+                    }
+                }
+                catch (RuntimeBinderException)
+                {
+                    //Schema doesn't exist on this attribute.
+                }
+            }
+
+            return tableName;
+        }
+
+        /// <summary>
+        /// 获取表名称
+        /// </summary>
+        /// <param name="databaseword"></param>
+        /// <returns></returns>
+        private static string EncapsulateSaveModel(string databaseword)
+        {
+            return string.Format(_saveencapsulation, databaseword);
         }
         #endregion
     }
