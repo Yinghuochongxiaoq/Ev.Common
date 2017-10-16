@@ -117,6 +117,8 @@
     <Compile Include="Enumber\EnumberEntity.cs" />
     <Compile Include="Enumber\EnumberHelper.cs" />
     <Compile Include="ExcelHelper\ExcelHelper.cs" />
+    <Compile Include="SqlHelper\EntityUtilCache.cs" />
+    <Compile Include="SqlHelper\EntityPropertyCache.cs" />
     <Compile Include="SqlHelper\SimpleCrud.cs" />
     <Compile Include="SqlHelper\SimpleCrudXpo.cs" />
     <Compile Include="Zip\ZipHelper.cs" />

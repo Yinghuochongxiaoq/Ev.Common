@@ -24,6 +24,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
+using Ev.Common.SqlHelper;
 
 namespace Ev.Common.DataConvert
 {
@@ -513,6 +514,27 @@ namespace Ev.Common.DataConvert
             List<TResult> list = new List<TResult>();
             if (table == null || table.Rows.Count < 1) return list;
             return table.Rows.Count > 100 ? ToListFast<TResult>(table) : ToListSlowly<TResult>(table);
+        }
+
+        /// <summary>
+        /// DataReader to List
+        /// </summary>
+        /// <typeparam name="TEntity"></typeparam>
+        /// <param name="dr"></param>
+        /// <returns></returns>
+        public static List<TEntity> ToList<TEntity>(IDataReader dr) where TEntity : new()
+        {
+            var listEntity = new List<TEntity>();
+            if (dr != null)
+            {
+                while (dr.Read())
+                {
+                    TEntity t = new TEntity();
+                    t = EntityUtilCache<TEntity>.SetPropertyInvoker(t, dr);
+                    listEntity.Add(t);
+                }
+            }
+            return listEntity;
         }
         #endregion
         #endregion

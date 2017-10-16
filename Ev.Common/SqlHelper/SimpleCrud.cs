@@ -22,9 +22,12 @@ using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using DevExpress.Xpo;
 using Ev.Common.CommonModel;
+using Ev.Common.DataConvert;
 
 namespace Ev.Common.SqlHelper
 {
@@ -872,7 +875,8 @@ namespace Ev.Common.SqlHelper
         /// 获取引用图
         /// <author>FreshMan</author>
         /// <creattime>2017-09-06</creattime>
-        /// </summary>        private static Dictionary<string, List<string>> GetReferencedMap()
+        /// </summary>
+        private static Dictionary<string, List<string>> GetReferencedMap()
         {
             Dictionary<string, List<string>> tableRefencedModelDictionary = new Dictionary<string, List<string>>();
             string sqlCmd = $@"
@@ -971,6 +975,137 @@ FROM
             //标记已经访问
             historyDictionary.Add(nodeName, 1);
             return result;
+        }
+        #endregion
+
+        #region [8、获得数据]
+
+        /// <summary>
+        /// 获取单条记录
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="searchModel">主键Id</param>
+        /// <returns></returns>
+        public static T Get<T>(object searchModel) where T : class, new()
+        {
+            var currenttype = typeof(T);
+            var idProps = GetIdProperties(currenttype).ToList();
+            if (!idProps.Any())
+                throw new ArgumentException("Get<T> only supports an entity with a [Key] or Id property");
+            var name = GetTableName(currenttype);
+            var sb = new StringBuilder();
+            sb.Append("select ");
+            BuildSelect(sb, GetScaffoldableProperties(currenttype));
+            sb.AppendFormat(" from {0} where ", name);
+
+            for (int i = 0; i < idProps.Count; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(" and ");
+                }
+                sb.AppendFormat("{0}=@{1}", GetColumnName(idProps[i]), idProps[i].Name);
+            }
+            List<SqlParameter> dynParms = new List<SqlParameter>();
+            if (idProps.Count == 1)
+            {
+                var prop = idProps.First();
+                var propertyInfo = searchModel.GetType().GetProperty(prop.Name);
+                if (propertyInfo != null)
+                    dynParms.Add(new SqlParameter
+                    {
+                        ParameterName = "@" + prop.Name,
+                        Value = propertyInfo.GetValue(searchModel, null)
+                    });
+            }
+            else
+            {
+                dynParms.AddRange(from prop in idProps
+                                  let propertyInfo = searchModel.GetType().GetProperty(prop.Name)
+                                  where propertyInfo != null
+                                  select new SqlParameter
+                                  {
+                                      ParameterName = "@" + prop.Name,
+                                      Value = propertyInfo.GetValue(searchModel, null)
+                                  });
+            }
+            var dt = GetDataTable(sb.ToString(), dynParms.ToArray());
+            var resultModel = DataTypeConvertHelper.ToList<T>(dt);
+            return resultModel?.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// 获取记录集合
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="sql">查询sql</param>
+        /// <returns></returns>
+        public static List<T> Get<T>(string sql) where T : new()
+        {
+            if (string.IsNullOrEmpty(sql)) return null;
+            var reader = GetReader(sql);
+            var listEntity = new List<T>();
+            if (reader != null)
+            {
+                while (reader.Read())
+                {
+                    T t = new T();
+                    t = EntityUtilCache<T>.SetPropertyInvoker(t, reader);
+                    listEntity.Add(t);
+                }
+                reader.Close();
+            }
+            return listEntity;
+        }
+
+        /// <summary>
+        /// 获取记录集合
+        /// </summary>
+        /// <typeparam name="T">实体类型</typeparam>
+        /// <param name="sql">查询sql</param>
+        /// <param name="values">参数化值</param>
+        /// <returns></returns>
+        public static List<T> Get<T>(string sql, params SqlParameter[] values) where T : new()
+        {
+            if (string.IsNullOrEmpty(sql)) return null;
+            var reader = GetReader(sql, values);
+            var listEntity = new List<T>();
+            if (reader != null)
+            {
+                while (reader.Read())
+                {
+                    T t = new T();
+                    t = EntityUtilCache<T>.SetPropertyInvoker(t, reader);
+                    listEntity.Add(t);
+                }
+                reader.Close();
+            }
+            return listEntity;
+        }
+
+        /// <summary>
+        /// 获得查询结果
+        /// </summary>
+        /// <param name="sb"></param>
+        /// <param name="props"></param>
+        private static void BuildSelect(StringBuilder sb, IEnumerable<PropertyInfo> props)
+        {
+            var propertyInfos = props as IList<PropertyInfo> ?? props.ToList();
+            if (!propertyInfos.Any()) return;
+            var addedAny = false;
+            for (int i = 0; i < propertyInfos.Count(); i++)
+            {
+                if (!propertyInfos.ElementAt(i).CanWrite) continue;
+                if (propertyInfos.ElementAt(i).GetCustomAttributes(true).Any(attr => attr.GetType().Name == typeof(NonPersistentAttribute).Name)) { continue; }
+                if (addedAny)
+                {
+                    sb.Append(",");
+                }
+                sb.Append(GetColumnName(propertyInfos.ElementAt(i)));
+                if (propertyInfos.ElementAt(i).GetCustomAttributes(true).SingleOrDefault(attr => attr.GetType().Name == typeof(ColumnAttribute).Name) != null)
+                    sb.Append(" as " + Encapsulate(propertyInfos.ElementAt(i).Name));
+                addedAny = true;
+            }
         }
         #endregion
     }

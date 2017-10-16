@@ -14,6 +14,7 @@
 *==版权所有：重庆慧都科技有限公司                             ==
 *==============================================================
 */
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -23,7 +24,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using DevExpress.Xpo;
-using Ev.Common.DataConvert;
 using Microsoft.CSharp.RuntimeBinder;
 
 namespace Ev.Common.SqlHelper
@@ -778,94 +778,17 @@ namespace Ev.Common.SqlHelper
         }
         #endregion
 
-        #region [16、获得数据]
-
-        /// <summary>
-        /// 获取单条记录
-        /// </summary>
-        /// <typeparam name="T">实体类型</typeparam>
-        /// <param name="searchModel">主键Id</param>
-        /// <returns></returns>
-        public static T Get<T>(object searchModel) where T : class, new()
-        {
-            var currenttype = typeof(T);
-            var idProps = GetIdProperties(currenttype).ToList();
-            if (!idProps.Any())
-                throw new ArgumentException("Get<T> only supports an entity with a [Key] or Id property");
-            var name = GetTableName(currenttype);
-            var sb = new StringBuilder();
-            sb.Append("select ");
-            BuildSelect(sb, GetScaffoldableProperties(currenttype));
-            sb.AppendFormat(" from {0} where ", name);
-
-            for (int i = 0; i < idProps.Count; i++)
-            {
-                if (i > 0)
-                {
-                    sb.Append(" and ");
-                }
-                sb.AppendFormat("{0}=@{1}", GetColumnName(idProps[i]), idProps[i].Name);
-            }
-            List<SqlParameter> dynParms = new List<SqlParameter>();
-            if (idProps.Count == 1)
-            {
-                var prop = idProps.First();
-                var propertyInfo = searchModel.GetType().GetProperty(prop.Name);
-                if (propertyInfo != null)
-                    dynParms.Add(new SqlParameter
-                    {
-                        ParameterName = "@" + prop.Name,
-                        Value = propertyInfo.GetValue(searchModel, null)
-                    });
-            }
-            else
-            {
-                dynParms.AddRange(from prop in idProps
-                                  let propertyInfo = searchModel.GetType().GetProperty(prop.Name)
-                                  where propertyInfo != null
-                                  select new SqlParameter
-                                  {
-                                      ParameterName = "@" + prop.Name,
-                                      Value = propertyInfo.GetValue(searchModel, null)
-                                  });
-            }
-            var dt = GetDataTable(sb.ToString(), dynParms.ToArray());
-            var resultModel = DataTypeConvertHelper.ToList<T>(dt);
-            return resultModel?.FirstOrDefault();
-        }
-
-        /// <summary>
-        /// 获得查询结果
-        /// </summary>
-        /// <param name="sb"></param>
-        /// <param name="props"></param>
-        private static void BuildSelect(StringBuilder sb, IEnumerable<PropertyInfo> props)
-        {
-            var propertyInfos = props as IList<PropertyInfo> ?? props.ToList();
-            if (!propertyInfos.Any()) return;
-            var addedAny = false;
-            for (int i = 0; i < propertyInfos.Count(); i++)
-            {
-                if (!propertyInfos.ElementAt(i).CanWrite) continue;
-                if (propertyInfos.ElementAt(i).GetCustomAttributes(true).Any(attr => attr.GetType().Name == typeof(NonPersistentAttribute).Name)) { continue; }
-                if (addedAny)
-                {
-                    sb.Append(",");
-                }
-                sb.Append(GetColumnName(propertyInfos.ElementAt(i)));
-                if (propertyInfos.ElementAt(i).GetCustomAttributes(true).SingleOrDefault(attr => attr.GetType().Name == typeof(ColumnAttribute).Name) != null)
-                    sb.Append(" as " + Encapsulate(propertyInfos.ElementAt(i).Name));
-                addedAny = true;
-            }
-        }
-        #endregion
-
-        #region [17、存储实体类型转换]
+        #region [16、存储实体类型转换]
 
         /// <summary>
         /// 类型中的字段缓存
         /// </summary>
         private static readonly ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>> SaveTypePropertyCaches = new ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>>();
+
+        /// <summary>
+        /// 类型中可写字段缓存
+        /// </summary>
+        private static readonly ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>> SaveWriteTypePropertyCaches = new ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>>();
 
         /// <summary>
         /// 数据库前缀
@@ -876,7 +799,7 @@ namespace Ev.Common.SqlHelper
         /// <para>集合转化为表格</para>
         /// <para>T中应该只包含值类型，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <typeparam name="T">类型中不应该包含有引用类型</typeparam>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <param name="entityList">转换的集合</param> 
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
@@ -903,7 +826,7 @@ namespace Ev.Common.SqlHelper
         /// <para>集合转化为表格</para>
         /// <para>T中应该只包含值类型，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <typeparam name="T">类型中不应该包含有引用类型</typeparam>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <param name="entityList">转换的集合</param> 
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
@@ -932,7 +855,7 @@ namespace Ev.Common.SqlHelper
         /// <param name="property"></param>
         /// <param name="obj"></param>
         /// <returns></returns>
-        private static object GetReflectorValue(PropertyInfo property, object obj)
+        internal static object GetReflectorValue(PropertyInfo property, object obj)
         {
             object paramsValue = null;
             if (property.PropertyType.Name == "String" || property.PropertyType.IsValueType)
@@ -1017,7 +940,7 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="type">type</param>
         /// <returns></returns>
-        private static ConcurrentBag<PropertyInfo> GetProperties(Type type)
+        internal static ConcurrentBag<PropertyInfo> GetProperties(Type type)
         {
             string key = $"{type.FullName}";
             ConcurrentBag<PropertyInfo> typeProperCaches;
@@ -1039,6 +962,33 @@ namespace Ev.Common.SqlHelper
                             || e.GetCustomAttributes(typeof(IdentitySeedAttribute), true).Length > 0)
                     ));
             SaveTypePropertyCaches.TryAdd(key, typeProperCaches);
+            return typeProperCaches;
+        }
+
+        /// <summary>
+        /// 获取类型的可写存储属性
+        /// </summary>
+        /// <param name="type">type</param>
+        /// <returns></returns>
+        internal static ConcurrentBag<PropertyInfo> GetWriteProperties(Type type)
+        {
+            string key = $"{type.FullName}";
+            ConcurrentBag<PropertyInfo> typeProperCaches;
+            if (SaveWriteTypePropertyCaches.TryGetValue(key, out typeProperCaches))
+            {
+                return typeProperCaches;
+            }
+            var props = type.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            typeProperCaches = new ConcurrentBag<PropertyInfo>(
+                props.Where(
+                    e =>
+                        e.CanWrite
+                        && !e.PropertyType.IsGenericType
+                        && e.GetCustomAttributes(typeof(NonPersistentAttribute), true).Length < 1
+                        && (e.PropertyType.IsValueType
+                            || e.PropertyType.Name == "String")
+                    ));
+            SaveWriteTypePropertyCaches.TryAdd(key, typeProperCaches);
             return typeProperCaches;
         }
 
