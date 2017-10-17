@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
 using DevExpress.Xpo;
@@ -79,6 +80,16 @@ namespace Ev.Common.SqlHelper
         /// 列名转化器
         /// </summary>
         private static readonly IColumnNameResolver SelfcolumnNameResolver = new ColumnNameResolver();
+
+        /// <summary>
+        /// 时间类型
+        /// </summary>
+        private static readonly Type DataTimeType = typeof(DateTime);
+
+        /// <summary>
+        /// 默认起始时间
+        /// </summary>
+        private static readonly DateTime DefaultDateTime = new DateTime(1900, 1, 1);
         #endregion
 
         #region [2、创建插入SQL]
@@ -791,6 +802,11 @@ namespace Ev.Common.SqlHelper
         private static readonly ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>> SaveWriteTypePropertyCaches = new ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>>();
 
         /// <summary>
+        /// 枚举类型
+        /// </summary>
+        private static readonly Type EnumType = typeof(Enum);
+
+        /// <summary>
         /// 数据库前缀
         /// </summary>
         private static string _saveencapsulation = "{0}";
@@ -804,7 +820,7 @@ namespace Ev.Common.SqlHelper
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
-        public static DataTable ConvertToDataTable<T>(IList<T> entityList)
+        public static DataTable ConvertToDataTable<T>(IList<T> entityList) where T : class
         {
             if (entityList == null || entityList.Count < 1) return null;
             var type = entityList.First().GetType();
@@ -831,7 +847,7 @@ namespace Ev.Common.SqlHelper
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
-        public static DataTable ConvertToDataTable<T>(ConcurrentBag<T> entityList)
+        public static DataTable ConvertToDataTable<T>(ConcurrentBag<T> entityList) where T : class
         {
             if (entityList == null || entityList.Count < 1) return null;
             var type = entityList.First().GetType();
@@ -860,9 +876,9 @@ namespace Ev.Common.SqlHelper
             object paramsValue = null;
             if (property.PropertyType.Name == "String" || property.PropertyType.IsValueType)
             {
-                if (property.PropertyType == typeof(DateTime))
+                if (property.PropertyType == DataTimeType)
                 {
-                    if (((DateTime)property.GetValue(obj, null)) < new DateTime(1900, 1, 1))
+                    if (((DateTime)property.GetValue(obj, null)) < DefaultDateTime)
                     {
                         paramsValue = DBNull.Value;
                     }
@@ -871,7 +887,7 @@ namespace Ev.Common.SqlHelper
                         paramsValue = property.GetValue(obj, null) ?? DBNull.Value;
                     }
                 }
-                else if (typeof(Enum).IsAssignableFrom(property.PropertyType))
+                else if (EnumType.IsAssignableFrom(property.PropertyType))
                 {
                     paramsValue = Convert.ToInt32(property.GetValue(obj, null));
                 }
@@ -919,7 +935,7 @@ namespace Ev.Common.SqlHelper
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
-        private static DataTable CreateTable(Type type, string tableName = null)
+        public static DataTable CreateTable(Type type, string tableName = null)
         {
             IEnumerable<PropertyInfo> typeProperCaches = GetProperties(type);
             if (string.IsNullOrEmpty(tableName))
@@ -940,7 +956,7 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="type">type</param>
         /// <returns></returns>
-        internal static ConcurrentBag<PropertyInfo> GetProperties(Type type)
+        public static ConcurrentBag<PropertyInfo> GetProperties(Type type)
         {
             string key = $"{type.FullName}";
             ConcurrentBag<PropertyInfo> typeProperCaches;
@@ -1030,6 +1046,213 @@ namespace Ev.Common.SqlHelper
         private static string EncapsulateSaveModel(string databaseword)
         {
             return string.Format(_saveencapsulation, databaseword);
+        }
+        #endregion
+
+        #region [17、数据行匹配实体]
+
+        /// <summary>
+        /// 快速匹配
+        /// </summary>
+        /// <param name="entityList"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static DataTable ConvertToDataTableMap<T>(ConcurrentBag<T> entityList) where T : class
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var type = entityList.First().GetType();
+            var dt = CreateTable(type);
+            var properties = GetProperties(type);
+            Func<T, object[]> map = DataRowMapperCahche<T>.GetDataRowMapper(properties, type);
+            foreach (T obj in entityList)
+            {
+                dt.Rows.Add(map(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 快速匹配指定匹配函数
+        /// </summary>
+        /// <param name="entityList"></param>
+        /// <param name="mapFunc"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static DataTable ConvertToDataTableMap<T>(ConcurrentBag<T> entityList, Func<T, object[]> mapFunc) where T : class
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var type = entityList.First().GetType();
+            var dt = CreateTable(type);
+            foreach (T obj in entityList)
+            {
+                dt.Rows.Add(mapFunc(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 快速匹配
+        /// </summary>
+        /// <param name="entityList"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static DataTable ConverToDataTableMap<T>(IList<T> entityList) where T : class
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var type = entityList.First().GetType();
+            var dt = CreateTable(type);
+            var properties = GetProperties(type);
+            Func<T, object[]> map = DataRowMapperCahche<T>.GetDataRowMapper(properties, type);
+            foreach (T obj in entityList)
+            {
+                dt.Rows.Add(map(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 快速匹配指定匹配函数
+        /// </summary>
+        /// <param name="entityList"></param>
+        /// <param name="mapFunc"></param>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public static DataTable ConvertToDataTableMap<T>(IList<T> entityList, Func<T, object[]> mapFunc) where T : class
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var type = entityList.First().GetType();
+            var dt = CreateTable(type);
+            foreach (T obj in entityList)
+            {
+                dt.Rows.Add(mapFunc(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 缓存类型
+        /// </summary>
+        /// <typeparam name="TSource"></typeparam>
+        public static class DataRowMapperCahche<TSource>
+        {
+            /// <summary>
+            /// 构造函数
+            /// </summary>
+            static DataRowMapperCahche()
+            {
+            }
+
+            /// <summary>
+            /// 互斥锁
+            /// </summary>
+            // ReSharper disable once StaticMemberInGenericType
+            private static readonly object LockObject = new object();
+
+            /// <summary>
+            /// 适配方法
+            /// </summary>
+            private static Func<TSource, object[]> _mapper;
+
+            /// <summary>
+            /// 适配方法
+            /// </summary>
+            /// <param name="typeListConcurrentBag"></param>
+            /// <param name="type"></param>
+            /// <returns></returns>
+            static internal Func<TSource, object[]> GetDataRowMapper(ConcurrentBag<PropertyInfo> typeListConcurrentBag, Type type)
+            {
+                if (_mapper == null)
+                {
+                    lock (LockObject)
+                    {
+                        if (_mapper == null)
+                        {
+                            _mapper = CreateDataRowMapper<TSource>(typeListConcurrentBag, type);
+                        }
+                    }
+                }
+                return _mapper;
+            }
+        }
+
+        /// <summary>
+        /// 创建一个委托，该TSource的实例映射到一个提供数据表的ItemArray
+        /// </summary>
+        /// <typeparam name="TSource">The Generic Type to map from</typeparam>
+        /// <param name="propertyInfos"></param>
+        /// <param name="sourceType">source type</param>
+        /// <returns>Func(Of TSource, Object())</returns>
+        static internal Func<TSource, object[]> CreateDataRowMapper<TSource>(ConcurrentBag<PropertyInfo> propertyInfos, Type sourceType)
+        {
+            ParameterExpression sourceInstanceExpression = Expression.Parameter(sourceType, "SourceInstance");
+            List<Expression> values = propertyInfos.Select(propertyInfo => GetSourceValueExpression(sourceInstanceExpression, propertyInfo)).ToList();
+            NewArrayExpression body = Expression.NewArrayInit(typeof(object), values);
+            return Expression.Lambda<Func<TSource, object[]>>(body, sourceInstanceExpression).Compile();
+        }
+
+        /// <summary>
+        /// 获取值
+        /// </summary>
+        /// <param name="sourceInstanceExpression"></param>
+        /// <param name="sourceMember"></param>
+        /// <returns></returns>
+        private static Expression GetSourceValueExpression(ParameterExpression sourceInstanceExpression,
+            PropertyInfo sourceMember)
+        {
+            MemberExpression memberExpression = Expression.PropertyOrField(sourceInstanceExpression, sourceMember.Name);
+            Expression sourceValueExpression = Expression.Constant(DBNull.Value);
+            if (sourceMember.PropertyType.Name == "String" || sourceMember.PropertyType.IsValueType)
+            {
+                // ReSharper disable once AssignNullToNotNullAttribute
+                if (Nullable.GetUnderlyingType(sourceMember.ReflectedType) == null)
+                {
+                    if (sourceMember.PropertyType == typeof(DateTime))
+                    {
+                        var lessThanExpression = Expression.LessThan(
+                            Expression.Property(memberExpression, "Ticks"),
+                            Expression.Constant(599266080000000000));
+                        sourceValueExpression = Expression.Condition(
+                            lessThanExpression,
+                            Expression.Constant(DefaultDateTime),
+                            memberExpression);
+                        sourceValueExpression = Expression.Convert(sourceValueExpression, typeof(object));
+                    }
+                    else
+                    if (typeof(Enum).IsAssignableFrom(sourceMember.PropertyType))
+                    {
+                        sourceValueExpression = Expression.Call(memberExpression, typeof(Enum).GetMethod("GetHashCode"));
+                        sourceValueExpression = Expression.Convert(sourceValueExpression, typeof(object));
+                    }
+                    else
+                    {
+                        sourceValueExpression = Expression.Convert(memberExpression, typeof(object));
+                    }
+                }
+                else
+                {
+                    sourceValueExpression =
+                        Expression.Condition(
+                            Expression.Property(Expression.Constant(sourceInstanceExpression), "HasValue"),
+                            memberExpression,
+                            Expression.Constant(DBNull.Value), typeof(object));
+                }
+            }
+            else
+            {
+                IEnumerable<PropertyInfo> referenceProps = sourceMember.PropertyType.GetProperties();
+                var referenceKey = referenceProps.FirstOrDefault(f => f.GetCustomAttributes(typeof(KeyAttribute), true).Length > 0);
+                if (referenceKey != null)
+                {
+                    MemberExpression childKeyExpression = Expression.PropertyOrField(memberExpression, referenceKey.Name);
+                    var equelExpression = Expression.ReferenceEqual(memberExpression, Expression.Constant(null));
+                    sourceValueExpression = Expression.Condition(
+                        equelExpression,
+                        Expression.Constant(null),
+                        childKeyExpression,
+                        typeof(object));
+                }
+            }
+            return sourceValueExpression;
         }
         #endregion
     }

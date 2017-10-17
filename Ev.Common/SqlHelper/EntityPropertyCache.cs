@@ -17,11 +17,8 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Data;
-using System.Linq;
 using System.Reflection;
-using DevExpress.Xpo;
 
 namespace Ev.Common.SqlHelper
 {
@@ -41,7 +38,7 @@ namespace Ev.Common.SqlHelper
     /// <param name="obj"></param>
     /// <param name="dataRow"></param>
     /// <returns></returns>
-    internal delegate DataRow GetPropertyValueInvoker<T>(T obj, DataRow dataRow);
+    internal delegate DataRow GetPropertyValueInvoker<in T>(T obj, DataRow dataRow);
 
     /// <summary>
     /// 设置属性值方法

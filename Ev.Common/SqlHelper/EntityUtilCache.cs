@@ -15,8 +15,6 @@
 *==============================================================
 */
 
-using System.ComponentModel;
-
 namespace Ev.Common.SqlHelper
 {
     /// <summary>
