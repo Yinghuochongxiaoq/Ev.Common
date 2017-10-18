@@ -813,7 +813,7 @@ namespace Ev.Common.SqlHelper
 
         /// <summary>
         /// <para>集合转化为表格</para>
-        /// <para>T中应该只包含值类型，对应的DataTable自动匹配列名相同的属性</para>
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
         /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <param name="entityList">转换的集合</param> 
@@ -840,7 +840,7 @@ namespace Ev.Common.SqlHelper
 
         /// <summary>
         /// <para>集合转化为表格</para>
-        /// <para>T中应该只包含值类型，对应的DataTable自动匹配列名相同的属性</para>
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
         /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <param name="entityList">转换的集合</param> 
@@ -952,7 +952,7 @@ namespace Ev.Common.SqlHelper
         }
 
         /// <summary>
-        /// 获取类型的存储属性
+        /// 获取类型的可读属性
         /// </summary>
         /// <param name="type">type</param>
         /// <returns></returns>
@@ -1052,12 +1052,13 @@ namespace Ev.Common.SqlHelper
         #region [17、数据行匹配实体]
 
         /// <summary>
-        /// 快速匹配
+        /// 快速匹配到DataTable中
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="entityList">需要映射实例集合</param>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
-        public static DataTable ConvertToDataTableMap<T>(ConcurrentBag<T> entityList) where T : class
+        public static DataTable MapToDataTable<T>(ConcurrentBag<T> entityList) where T : class
         {
             if (entityList == null || entityList.Count < 1) return null;
             var type = entityList.First().GetType();
@@ -1078,7 +1079,7 @@ namespace Ev.Common.SqlHelper
         /// <param name="mapFunc"></param>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public static DataTable ConvertToDataTableMap<T>(ConcurrentBag<T> entityList, Func<T, object[]> mapFunc) where T : class
+        public static DataTable MapToDataTable<T>(ConcurrentBag<T> entityList, Func<T, object[]> mapFunc) where T : class
         {
             if (entityList == null || entityList.Count < 1) return null;
             var type = entityList.First().GetType();
@@ -1091,12 +1092,33 @@ namespace Ev.Common.SqlHelper
         }
 
         /// <summary>
-        /// 快速匹配
+        /// 快速匹配指定匹配函数
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="entityList">需要映射实例集合</param>
+        /// <param name="entityType">实例类型</param>
+        /// <param name="mapFunc">map映射方法</param>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
-        public static DataTable ConverToDataTableMap<T>(IList<T> entityList) where T : class
+        public static DataTable MapToDataTable<T>(ConcurrentBag<T> entityList, Type entityType, Func<T, object[]> mapFunc) where T : class
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var dt = CreateTable(entityType);
+            foreach (T obj in entityList)
+            {
+                dt.Rows.Add(mapFunc(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 快速匹配
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
+        /// </summary>
+        /// <param name="entityList">需要映射实例集合</param>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
+        /// <returns></returns>
+        public static DataTable MapToDataTable<T>(IList<T> entityList) where T : class
         {
             if (entityList == null || entityList.Count < 1) return null;
             var type = entityList.First().GetType();
@@ -1112,12 +1134,13 @@ namespace Ev.Common.SqlHelper
 
         /// <summary>
         /// 快速匹配指定匹配函数
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList"></param>
-        /// <param name="mapFunc"></param>
-        /// <typeparam name="T"></typeparam>
+        /// <param name="entityList">需要映射实例集合</param>
+        /// <param name="mapFunc">map映射方法</param>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
-        public static DataTable ConvertToDataTableMap<T>(IList<T> entityList, Func<T, object[]> mapFunc) where T : class
+        public static DataTable MapToDataTable<T>(IList<T> entityList, Func<T, object[]> mapFunc) where T : class
         {
             if (entityList == null || entityList.Count < 1) return null;
             var type = entityList.First().GetType();
@@ -1130,7 +1153,75 @@ namespace Ev.Common.SqlHelper
         }
 
         /// <summary>
-        /// 缓存类型
+        /// 快速匹配指定匹配函数
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
+        /// </summary>
+        /// <param name="entityList">需要映射实例集合</param>
+        /// <param name="entityType">实例类型</param>
+        /// <param name="mapFunc">map映射方法</param>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
+        /// <returns></returns>
+        public static DataTable MapToDataTable<T>(IList<T> entityList, Type entityType, Func<T, object[]> mapFunc) where T : class
+        {
+            if (entityList == null || entityList.Count < 1) return null;
+            var dt = CreateTable(entityType);
+            foreach (T obj in entityList)
+            {
+                dt.Rows.Add(mapFunc(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 快速匹配
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
+        /// </summary>
+        /// <param name="entityList">需要映射实例集合</param>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
+        /// <returns></returns>
+        public static DataTable MapToDataTable<T>(IEnumerable<T> entityList) where T : class
+        {
+            if (entityList == null) return null;
+            DataTable dt = null;
+            Func<T, object[]> map = null;
+            var notFirstFlag = true;
+            foreach (T obj in entityList)
+            {
+                if (notFirstFlag)
+                {
+                    var type = obj.GetType();
+                    dt = CreateTable(type);
+                    var properties = GetProperties(type);
+                    map = DataRowMapperCahche<T>.GetDataRowMapper(properties, type);
+                    notFirstFlag = false;
+                }
+                dt.Rows.Add(map(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 快速匹配指定匹配函数
+        /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
+        /// </summary>
+        /// <param name="entityList">需要映射实例集合</param>
+        /// <param name="entityType">实例类型</param>
+        /// <param name="mapFunc">map映射方法</param>
+        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
+        /// <returns></returns>
+        public static DataTable MapToDataTable<T>(IEnumerable<T> entityList, Type entityType, Func<T, object[]> mapFunc) where T : class
+        {
+            if (entityList == null) return null;
+            var dt = CreateTable(entityType);
+            foreach (var obj in entityList)
+            {
+                dt.Rows.Add(mapFunc(obj));
+            }
+            return dt;
+        }
+
+        /// <summary>
+        /// 使用指定属性列表创建指定类型<see cref="TSource"/>映射缓存方法
         /// </summary>
         /// <typeparam name="TSource"></typeparam>
         public static class DataRowMapperCahche<TSource>
@@ -1156,10 +1247,10 @@ namespace Ev.Common.SqlHelper
             /// <summary>
             /// 适配方法
             /// </summary>
-            /// <param name="typeListConcurrentBag"></param>
-            /// <param name="type"></param>
+            /// <param name="typeListConcurrentBag">创建方法属性集合</param>
+            /// <param name="type"><see cref="TSource"/>类型</param>
             /// <returns></returns>
-            static internal Func<TSource, object[]> GetDataRowMapper(ConcurrentBag<PropertyInfo> typeListConcurrentBag, Type type)
+            public static Func<TSource, object[]> GetDataRowMapper(ConcurrentBag<PropertyInfo> typeListConcurrentBag, Type type)
             {
                 if (_mapper == null)
                 {
@@ -1217,8 +1308,7 @@ namespace Ev.Common.SqlHelper
                             memberExpression);
                         sourceValueExpression = Expression.Convert(sourceValueExpression, typeof(object));
                     }
-                    else
-                    if (typeof(Enum).IsAssignableFrom(sourceMember.PropertyType))
+                    else if (typeof(Enum).IsAssignableFrom(sourceMember.PropertyType))
                     {
                         sourceValueExpression = Expression.Call(memberExpression, typeof(Enum).GetMethod("GetHashCode"));
                         sourceValueExpression = Expression.Convert(sourceValueExpression, typeof(object));
