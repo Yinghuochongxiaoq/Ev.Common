@@ -33,6 +33,8 @@ namespace Ev.Common.SqlHelper
 {
     /// <summary>
     /// 简单类型处理
+    /// <para>数据库链接字符串名称为：ConstrSQL,需存放于AppSettings节点</para>
+    /// <para>或者使用<see cref="SetConnectionString"/>重新设置全局链接字符串变量</para>
     /// </summary>
     public static partial class SimpleCrud
     {
@@ -81,12 +83,17 @@ namespace Ev.Common.SqlHelper
         /// 执行sql
         /// </summary>
         /// <param name="safeSql">SQL命令</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>执行结果影响行数</returns>
-        public static int ExecuteCommand(string safeSql)
+        public static int ExecuteCommand(string safeSql, string connectionString = null)
         {
             try
             {
-                using (var conn = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
                     SqlCommand cmd = new SqlCommand(safeSql, conn);
@@ -109,12 +116,17 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="sql">SQL命令</param>
         /// <param name="values">参数化参数</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>执行结果影响行数</returns>
-        public static int ExecuteCommand(string sql, params SqlParameter[] values)
+        public static int ExecuteCommand(string sql, SqlParameter[] values, string connectionString = null)
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
@@ -142,14 +154,19 @@ namespace Ev.Common.SqlHelper
         /// <param name="values">参数化参数</param>
         /// <param name="transaction">是否事务执行：true:事务执行（sql语句为单条事务语句），false:非事务执行</param>
         /// <param name="timeOut">命令超时时间 （以秒为单位）默认值为 30 秒</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>执行结果影响行数</returns>
-        public static int ExecuteCommand(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
+        public static int ExecuteCommand(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null, string connectionString = null)
         {
 
             SqlTransaction tranProducts = null;
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
@@ -209,14 +226,19 @@ namespace Ev.Common.SqlHelper
         /// <param name="values">参数化参数</param>
         /// <param name="transaction">是否事务执行：true:事务执行（sql语句为单条事务语句），false:非事务执行</param>
         /// <param name="timeOut">命令超时时间 （以秒为单位）默认值为 30 秒</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>执行结果影响行数</returns>
-        public static bool ExecuteCommand(List<string> sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
+        public static bool ExecuteCommand(List<string> sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null, string connectionString = null)
         {
 
             SqlTransaction tranProducts = null;
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     SqlCommand cmd = new SqlCommand { Connection = connection };
@@ -279,16 +301,22 @@ namespace Ev.Common.SqlHelper
         #endregion
 
         #region [3、Scalar执行方法]
+
         /// <summary>
         /// 执行只返回单行单列的值
         /// </summary>
         /// <param name="safeSql">SQL命令</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>执行只返回单行单列的值</returns>
-        public static object GetScalar(string safeSql)
+        public static object GetScalar(string safeSql, string connectionString = null)
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     SqlCommand cmd = new SqlCommand(safeSql, connection);
@@ -311,12 +339,17 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="sql">SQL命令</param>
         /// <param name="values">参数化参数</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>执行只返回单行单列的值</returns>
-        public static object GetScalar(string sql, params SqlParameter[] values)
+        public static object GetScalar(string sql, SqlParameter[] values, string connectionString = null)
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
@@ -346,13 +379,18 @@ namespace Ev.Common.SqlHelper
         /// <param name="values">参数化参数</param>
         /// <param name="transaction">是否事务</param>
         /// <param name="timeOut">命令超时时间（以秒为单位）默认值为 30 秒</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static dynamic GetScalar(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null)
+        public static dynamic GetScalar(string sql, IEnumerable<SqlParameter> values, bool transaction = false, int? timeOut = null, string connectionString = null)
         {
             SqlTransaction tranProducts = null;
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     SqlCommand cmd = new SqlCommand(sql, connection);
@@ -398,12 +436,17 @@ namespace Ev.Common.SqlHelper
         /// 获取一个读取器
         /// </summary>
         /// <param name="safeSql">SQL命令</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>获取一个读取器</returns>
-        public static SqlDataReader GetReader(string safeSql)
+        public static SqlDataReader GetReader(string safeSql, string connectionString = null)
         {
             try
             {
-                var connection = new SqlConnection(_connectionString);
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                var connection = new SqlConnection(connectionString);
                 connection.Open();
                 SqlCommand cmd = new SqlCommand(safeSql, connection);
                 SqlDataReader reader = cmd.ExecuteReader();
@@ -424,12 +467,17 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="sql">SQL命令</param>
         /// <param name="values">参数化参数</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>获取一个读取器</returns>
-        public static SqlDataReader GetReader(string sql, params SqlParameter[] values)
+        public static SqlDataReader GetReader(string sql, SqlParameter[] values, string connectionString = null)
         {
             try
             {
-                var connection = new SqlConnection(_connectionString);
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                var connection = new SqlConnection(connectionString);
                 connection.Open();
                 SqlCommand cmd = new SqlCommand(sql, connection);
                 if (values.Length > 0)
@@ -455,12 +503,17 @@ namespace Ev.Common.SqlHelper
         /// 无参数sql返回DataTable
         /// </summary>
         /// <param name="safeSql">SQL命令</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>结果集合</returns>
-        public static DataTable GetDataTable(string safeSql)
+        public static DataTable GetDataTable(string safeSql, string connectionString = null)
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     DataSet ds = new DataSet();
@@ -485,12 +538,17 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="sql">SQL命令</param>
         /// <param name="values">参数化参数</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>结果集合</returns>
-        public static DataTable GetDataTable(string sql, params SqlParameter[] values)
+        public static DataTable GetDataTable(string sql, SqlParameter[] values, string connectionString = null)
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     DataSet ds = new DataSet();
@@ -519,12 +577,17 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="sql">SQL命令</param>
         /// <param name="table">表名称</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns>结果集合</returns>
-        public static DataSet GetDataSet(string sql, string table)
+        public static DataSet GetDataSet(string sql, string table, string connectionString = null)
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     DataSet ds = new DataSet();
@@ -550,12 +613,17 @@ namespace Ev.Common.SqlHelper
         /// <param name="sql">SQL命令</param>
         /// <param name="table">表名称</param>
         /// <param name="values">参数化参数</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static DataSet GetDataSet(string sql, string table, params SqlParameter[] values)
+        public static DataSet GetDataSet(string sql, string table, SqlParameter[] values, string connectionString = null)
         {
             try
             {
-                using (var connection = new SqlConnection(_connectionString))
+                if (string.IsNullOrEmpty(connectionString))
+                {
+                    connectionString = _connectionString;
+                }
+                using (var connection = new SqlConnection(connectionString))
                 {
                     connection.Open();
                     DataSet ds = new DataSet();
@@ -585,10 +653,15 @@ namespace Ev.Common.SqlHelper
         /// 批量更新数据
         /// </summary>  
         /// <param name="table"></param> 
-        public static void BulkUpdate(DataTable table)
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
+        public static void BulkUpdate(DataTable table, string connectionString = null)
         {
             if (table == null || table.Rows.Count < 1) return;
-            using (SqlConnection conn = new SqlConnection(_connectionString))
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = _connectionString;
+            }
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 SqlCommand comm = conn.CreateCommand();
                 comm.CommandTimeout = 30;
@@ -624,10 +697,15 @@ namespace Ev.Common.SqlHelper
         /// </summary> 
         /// <param name="tableName">数据库服务器上目标表名</param> 
         /// <param name="dt">含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable</param> 
-        public static void BulkCopy(string tableName, DataTable dt)
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
+        public static void BulkCopy(string tableName, DataTable dt, string connectionString = null)
         {
             if (string.IsNullOrEmpty(tableName) || dt == null || dt.Rows.Count < 0) return;
-            using (SqlConnection conn = new SqlConnection(_connectionString))
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = _connectionString;
+            }
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
                 using (SqlTransaction transaction = conn.BeginTransaction())
@@ -664,19 +742,25 @@ namespace Ev.Common.SqlHelper
         /// 大批量插入数据
         /// </summary>
         /// <param name="dt">含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable</param>
-        public static void BulkCopy(DataTable dt)
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
+        public static void BulkCopy(DataTable dt, string connectionString = null)
         {
-            BulkCopy(dt.TableName, dt);
+            BulkCopy(dt.TableName, dt, connectionString);
         }
 
         /// <summary>
         /// 批量插入数据
         /// </summary>
         /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
-        public static void BulkCopy(DataSet ds)
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
+        public static void BulkCopy(DataSet ds, string connectionString = null)
         {
             if (ds == null || ds.Tables.Count < 1) return;
-            using (SqlConnection conn = new SqlConnection(_connectionString))
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = _connectionString;
+            }
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
                 using (SqlTransaction transaction = conn.BeginTransaction())
@@ -718,10 +802,15 @@ namespace Ev.Common.SqlHelper
         /// 批量插入数据
         /// </summary>
         /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
-        public static void BulkCopy(IList<DataTable> ds)
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
+        public static void BulkCopy(IList<DataTable> ds, string connectionString = null)
         {
             if (ds == null || !ds.Any()) return;
-            using (SqlConnection conn = new SqlConnection(_connectionString))
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                connectionString = _connectionString;
+            }
+            using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
                 using (SqlTransaction transaction = conn.BeginTransaction())
@@ -763,10 +852,11 @@ namespace Ev.Common.SqlHelper
         /// 批量插入数据
         /// </summary>
         /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
-        public static void BulkCopy(ConcurrentBag<DataTable> ds)
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
+        public static void BulkCopy(ConcurrentBag<DataTable> ds, string connectionString = null)
         {
             if (ds == null || !ds.Any()) return;
-            Parallel.ForEach(ds, BulkCopy);
+            Parallel.ForEach(ds, dt => BulkCopy(dt, connectionString));
         }
         #endregion
 
@@ -779,10 +869,11 @@ namespace Ev.Common.SqlHelper
         /// <param name="dataBase">数据库名称，默认为当前链接数据库</param>
         /// <param name="isView">是否是视图：true：是；false：否（默认）</param>
         /// <param name="type">1:delete;0:drop</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-09-06</creattime>
         /// <returns>删除字符串</returns>
-        private static string GetDeleteOrDropDataTableSqlByName(List<string> tableNameList, string dataBase, bool isView, int type)
+        private static string GetDeleteOrDropDataTableSqlByName(List<string> tableNameList, string dataBase, bool isView, int type, string connectionString = null)
         {
             if (tableNameList == null || tableNameList.Count < 1) return string.Empty;
             var hadDeleteTable = new Dictionary<string, int>();
@@ -792,7 +883,7 @@ namespace Ev.Common.SqlHelper
             foreach (var tableName in tableNameList.Distinct().Where(tableName => !string.IsNullOrEmpty(tableName)))
             {
                 if (historyDictionary.ContainsKey(tableName)) continue;
-                var referencedTableList = GetDeleteTableNameList(tableName, historyDictionary);
+                var referencedTableList = GetDeleteTableNameList(tableName, historyDictionary, connectionString);
                 if (!string.IsNullOrEmpty(dataBase))
                 {
                     dataBase = dataBase + ".dbo.";
@@ -821,12 +912,13 @@ namespace Ev.Common.SqlHelper
         /// <param name="tableName">表或视图名称</param>
         /// <param name="dataBase">数据库名称，默认为当前链接数据库</param>
         /// <param name="isView">是否是视图：true：是；false：否（默认）</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-09-5</creattime>
         /// <returns>删除字符串</returns>
-        public static string GetDeleteDataTableSqlByName(string tableName, string dataBase = null, bool isView = false)
+        public static string GetDeleteDataTableSqlByName(string tableName, string dataBase = null, bool isView = false, string connectionString = null)
         {
-            return GetDeleteOrDropDataTableSqlByName(new List<string> { tableName }, dataBase, isView, 1);
+            return GetDeleteOrDropDataTableSqlByName(new List<string> { tableName }, dataBase, isView, 1, connectionString);
         }
 
         /// <summary>
@@ -835,12 +927,13 @@ namespace Ev.Common.SqlHelper
         /// <param name="tableNameList">表或视图名称集合</param>
         /// <param name="dataBase">数据库名称，默认为当前链接数据库</param>
         /// <param name="isView">是否是视图：true：是；false：否（默认）</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-09-06</creattime>
         /// <returns>删除字符串</returns>
-        public static string GetDeleteDataTableSqlByName(List<string> tableNameList, string dataBase = null, bool isView = false)
+        public static string GetDeleteDataTableSqlByName(List<string> tableNameList, string dataBase = null, bool isView = false, string connectionString = null)
         {
-            return GetDeleteOrDropDataTableSqlByName(tableNameList, dataBase, isView, 1);
+            return GetDeleteOrDropDataTableSqlByName(tableNameList, dataBase, isView, 1, connectionString);
         }
 
         /// <summary>
@@ -849,12 +942,13 @@ namespace Ev.Common.SqlHelper
         /// <param name="tableName">表或视图名称集合</param>
         /// <param name="dataBase">数据库名称，默认为当前链接数据库</param>
         /// <param name="isView">是否是视图：true：是；false：否（默认）</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-09-06</creattime>
         /// <returns>删除字符串</returns>
-        public static string GetDropDataTableSqlByName(string tableName, string dataBase = null, bool isView = false)
+        public static string GetDropDataTableSqlByName(string tableName, string dataBase = null, bool isView = false, string connectionString = null)
         {
-            return GetDeleteOrDropDataTableSqlByName(new List<string> { tableName }, dataBase, isView, 1);
+            return GetDeleteOrDropDataTableSqlByName(new List<string> { tableName }, dataBase, isView, 1, connectionString);
         }
 
         /// <summary>
@@ -863,20 +957,22 @@ namespace Ev.Common.SqlHelper
         /// <param name="tableNameList">表或视图名称集合</param>
         /// <param name="dataBase">数据库名称，默认为当前链接数据库</param>
         /// <param name="isView">是否是视图：true：是；false：否（默认）</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-09-06</creattime>
         /// <returns>删除字符串</returns>
-        public static string GetDropDataTableSqlByName(List<string> tableNameList, string dataBase = null, bool isView = false)
+        public static string GetDropDataTableSqlByName(List<string> tableNameList, string dataBase = null, bool isView = false, string connectionString = null)
         {
-            return GetDeleteOrDropDataTableSqlByName(tableNameList, dataBase, isView, 0);
+            return GetDeleteOrDropDataTableSqlByName(tableNameList, dataBase, isView, 0, connectionString);
         }
 
         /// <summary>
         /// 获取引用图
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-09-06</creattime>
         /// </summary>
-        private static Dictionary<string, List<string>> GetReferencedMap()
+        private static Dictionary<string, List<string>> GetReferencedMap(string connectionString = null)
         {
             Dictionary<string, List<string>> tableRefencedModelDictionary = new Dictionary<string, List<string>>();
             string sqlCmd = $@"
@@ -895,7 +991,7 @@ SELECT
 FROM
     sys.foreign_key_columns ";
             var resulteInfo = new List<ReferencedModel>();
-            var dr = GetReader(sqlCmd);
+            var dr = GetReader(sqlCmd, connectionString);
             while (dr.Read())
             {
                 var tempModel = new ReferencedModel
@@ -925,13 +1021,14 @@ FROM
         /// </summary>
         /// <param name="tableName">表名称</param>
         /// <param name="historyDictionary">访问链路</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-09-06</creattime>
         /// <returns></returns>
-        private static List<string> GetDeleteTableNameList(string tableName, Dictionary<string, int> historyDictionary)
+        private static List<string> GetDeleteTableNameList(string tableName, Dictionary<string, int> historyDictionary, string connectionString = null)
         {
             if (string.IsNullOrEmpty(tableName)) return null;
-            var referencedMap = GetReferencedMap();
+            var referencedMap = GetReferencedMap(connectionString);
             if (!referencedMap.ContainsKey(tableName))
             {
                 historyDictionary.Add(tableName, 1);
@@ -1039,11 +1136,12 @@ FROM
         /// </summary>
         /// <typeparam name="T">实体类型</typeparam>
         /// <param name="sql">查询sql</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static List<T> Get<T>(string sql) where T : new()
+        public static List<T> Get<T>(string sql, string connectionString = null) where T : new()
         {
             if (string.IsNullOrEmpty(sql)) return null;
-            var reader = GetReader(sql);
+            var reader = GetReader(sql, connectionString);
             var listEntity = new List<T>();
             if (reader != null)
             {
@@ -1064,11 +1162,12 @@ FROM
         /// <typeparam name="T">实体类型</typeparam>
         /// <param name="sql">查询sql</param>
         /// <param name="values">参数化值</param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static List<T> Get<T>(string sql, params SqlParameter[] values) where T : new()
+        public static List<T> Get<T>(string sql, SqlParameter[] values, string connectionString = null) where T : new()
         {
             if (string.IsNullOrEmpty(sql)) return null;
-            var reader = GetReader(sql, values);
+            var reader = GetReader(sql, values, connectionString);
             var listEntity = new List<T>();
             if (reader != null)
             {

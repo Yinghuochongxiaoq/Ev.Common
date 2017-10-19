@@ -95,16 +95,17 @@ namespace Ev.Common.SqlHelper
         #region [2、创建插入SQL]
 
         /// <summary>
-        /// 创建插入SQL
+        /// 执行插入实体
         /// </summary>
         /// <param name="entityToInsert"></param>
         /// <param name="transaction"></param>
         /// <param name="commandTimeout"></param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <typeparam name="TKey">仅仅支持一下类型：int,uint,long,ulong,short,ushort,Guid,string</typeparam>
         /// <typeparam name="TEntity"></typeparam>
         /// <returns></returns>
         public static TKey Insert<TKey, TEntity>(TEntity entityToInsert,
-            bool transaction = false, int? commandTimeout = null)
+            bool transaction = false, int? commandTimeout = null, string connectionString = null)
         {
             var type = entityToInsert.GetType();
             var idProps = GetIdProperties(entityToInsert).ToList();
@@ -153,7 +154,7 @@ namespace Ev.Common.SqlHelper
                 keyHasPredefinedValue = true;
             }
             var paramters = ObjectToParameters(entityToInsert);
-            var r = GetScalar(sb.ToString(), paramters, transaction, commandTimeout);
+            var r = GetScalar(sb.ToString(), paramters, transaction, commandTimeout, connectionString);
             if (keytype == typeof(Guid) || keyHasPredefinedValue)
             {
                 return (TKey)idProps.First().GetValue(entityToInsert, null);
@@ -164,7 +165,6 @@ namespace Ev.Common.SqlHelper
             }
             return (TKey)r;
         }
-
 
         /// <summary>
         /// 创建插入SQL
@@ -552,8 +552,9 @@ namespace Ev.Common.SqlHelper
         /// <param name="entityToUpdate"></param>
         /// <param name="transaction"></param>
         /// <param name="commandTimeout"></param>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static int Update<TEntity>(TEntity entityToUpdate, bool transaction = false, int? commandTimeout = null)
+        public static int Update<TEntity>(TEntity entityToUpdate, bool transaction = false, int? commandTimeout = null, string connectionString = null)
         {
             var idProps = GetIdProperties(entityToUpdate).ToList();
             if (!idProps.Any())
@@ -567,7 +568,7 @@ namespace Ev.Common.SqlHelper
             sb.Append(" where ");
             BuildWhere(sb, idProps, entityToUpdate);
             var paramters = ObjectToParameters(entityToUpdate);
-            return ExecuteCommand(sb.ToString(), paramters, transaction, commandTimeout);
+            return ExecuteCommand(sb.ToString(), paramters, transaction, commandTimeout, connectionString);
         }
         #endregion
 
@@ -669,8 +670,9 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取禁用外键约束sql
         /// </summary>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static string GetDisabledForeignKeySql()
+        public static string GetDisabledForeignKeySql(string connectionString = null)
         {
             var disableSql = @"DECLARE
         @nocheckSql NVARCHAR (MAX)
@@ -685,7 +687,7 @@ namespace Ev.Common.SqlHelper
         AND a.parent_obj = b.id
         AND b.xtype = 'u' FOR xml PATH('')
 	) select @nocheckSql";
-            var result = GetScalar(disableSql);
+            var result = GetScalar(disableSql, connectionString);
             return result.ToString();
         }
         #endregion
@@ -695,8 +697,9 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取启用外键约束sql
         /// </summary>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static string GetEnabledForeignKeySql()
+        public static string GetEnabledForeignKeySql(string connectionString = null)
         {
             var disableSql = @"DECLARE
 		@checkSql NVARCHAR (MAX)
@@ -711,7 +714,7 @@ namespace Ev.Common.SqlHelper
 		AND a.parent_obj = b.id
 		AND b.xtype = 'u' FOR xml PATH ('')
 	) select @checkSql";
-            var result = GetScalar(disableSql);
+            var result = GetScalar(disableSql, connectionString);
             return result.ToString();
         }
 
@@ -722,8 +725,9 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取删除外键约束的SQL
         /// </summary>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static string GetDeleteForeignKeySql()
+        public static string GetDeleteForeignKeySql(string connectionString = null)
         {
             var disableSql = @"DECLARE 
 		@delSql nvarchar (MAX)
@@ -736,7 +740,7 @@ namespace Ev.Common.SqlHelper
 		WHERE
 			F.parent_object_id = O.id FOR xml path ('')
 	) select @delSql ";
-            var result = GetScalar(disableSql);
+            var result = GetScalar(disableSql, connectionString);
             return result.ToString();
         }
         #endregion
@@ -746,8 +750,9 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取重建外键约束SQL
         /// </summary>
+        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
-        public static string GetReCreatForeignKeySql()
+        public static string GetReCreatForeignKeySql(string connectionString = null)
         {
             var disableSql = @"DECLARE 
 		@createSql nvarchar (MAX)
@@ -784,7 +789,7 @@ namespace Ev.Common.SqlHelper
 		WHERE
 			c.constraint_object_id = k.object_id FOR xml path ('')
 	) select @createSql ";
-            var result = GetScalar(disableSql);
+            var result = GetScalar(disableSql, connectionString);
             return result.ToString();
         }
         #endregion
