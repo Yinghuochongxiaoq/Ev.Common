@@ -823,7 +823,7 @@ namespace Ev.Common.SqlHelper
                             using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction)
                                 )
                             {
-                                bulkCopy.BatchSize = 20000;
+                                //bulkCopy.BatchSize = 20000;
                                 bulkCopy.BulkCopyTimeout = 60;
                                 bulkCopy.DestinationTableName = dt.TableName;
                                 foreach (DataColumn col in dt.Columns)
