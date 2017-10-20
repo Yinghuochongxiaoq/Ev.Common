@@ -65,6 +65,7 @@ namespace Ev.Common.ExcelHelper
         /// 读取Excel表中的数据到DataSet中
         /// </summary>
         /// <returns>数据集合DataSet</returns>
+        [Obsolete]
         public DataSet ReadExcelToDataSet()
         {
             if (string.IsNullOrEmpty(_fileName)) return null;
