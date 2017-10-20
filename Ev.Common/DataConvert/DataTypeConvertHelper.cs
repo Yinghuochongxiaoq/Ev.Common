@@ -33,13 +33,9 @@ namespace Ev.Common.DataConvert
     /// </summary>
     public static class DataTypeConvertHelper
     {
-        #region [0、Check Entity have reflect]
         /// <summary>
         /// 检测实体中是否存在引用，存在返回false，不存在，返回true
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
-        /// <param name="errorMessage"></param>
         /// <author>FreshMan</author>
         /// <creattime>2017-06-21</creattime>
         /// <returns></returns>
@@ -77,18 +73,12 @@ namespace Ev.Common.DataConvert
             }
             return string.IsNullOrEmpty(errorMessage);
         }
-        #endregion
 
-        #region [1、IEnumerable to dataTable]
-
-        #region [1.1 比较慢的方法]
         /// <summary>
         /// <para>集合转化为表格</para>
         /// <para>T中应该只包含值类型，对应的DataTable自动匹配列名相同的属性</para>
         /// <para>当数据量大于100时，请用<see cref="ToDataTable{TSource}"/></para>
         /// </summary>
-        /// <typeparam name="T">类型中不应该包含有引用类型</typeparam>
-        /// <param name="entityList">转换的集合</param> 
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
@@ -114,8 +104,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// <para>创建表格</para>
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="tableName"></param>
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
@@ -130,15 +118,11 @@ namespace Ev.Common.DataConvert
             }
             return dt;
         }
-        #endregion
 
-        #region [1.2 比较快的方法]
         /// <summary>
         /// <para>Creates a DataTable from an IEnumerable</para>
         /// <para>当数据量小于100时，请用<see cref="ToDataTableSlowly{TSource}"/></para>
         /// </summary>
-        /// <typeparam name="TSource">The Generic type of the Collection</typeparam>
-        /// <param name="collection"></param>
         /// <returns>DataTable</returns>
         public static DataTable ToDataTable<TSource>(IEnumerable<TSource> collection)
         {
@@ -155,7 +139,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 使用泛型类型创建一个同样字段名的DataTable结构
         /// </summary>
-        /// <typeparam name="TSource">泛型类型</typeparam>
         /// <returns>DataTable</returns>
         static internal DataTable CreateDataTable<TSource>()
         {
@@ -178,9 +161,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 只将值类型和string类型添加一列到DataTable中
         /// </summary>
-        /// <param name="dt">DataTable</param>
-        /// <param name="sourceMember">列对象</param>
-        /// <param name="memberType">列类型</param>
         private static void AddTableColumn(this DataTable dt, MemberInfo sourceMember, Type memberType)
         {
             if ((memberType.IsValueType || memberType == typeof(string)))
@@ -207,7 +187,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 获取Field特性，如果存在
         /// </summary>
-        /// <param name="member">MemberInfo</param>
         /// <returns>String</returns>
         private static string GetFieldNameAttribute(MemberInfo member)
         {
@@ -221,8 +200,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 检测字段名称或者设置的field特性名称是否匹配
         /// </summary>
-        /// <param name="member">The Member of the Instance to check</param>
-        /// <param name="name">The Name to compare with</param>
         /// <returns>True if Fields match</returns>
         /// <remarks>FieldNameAttribute takes precedence over TargetMembers name.</remarks>
         private static bool MemberMatchesName(MemberInfo member, string name)
@@ -234,8 +211,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 创建表达式
         /// </summary>
-        /// <param name="sourceInstanceExpression"></param>
-        /// <param name="sourceMember"></param>
         /// <returns></returns>
         private static Expression GetSourceValueExpression(ParameterExpression sourceInstanceExpression, MemberInfo sourceMember)
         {
@@ -261,8 +236,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 创建一个委托，该TSource的实例映射到一个提供数据表的ItemArray
         /// </summary>
-        /// <typeparam name="TSource">The Generic Type to map from</typeparam>
-        /// <param name="dt">The DataTable to map to</param>
         /// <returns>Func(Of TSource, Object())</returns>
         static internal Func<TSource, object[]> CreateDataRowMapper<TSource>(DataTable dt)
         {
@@ -297,7 +270,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 添加缓存
         /// </summary>
-        /// <typeparam name="TSource"></typeparam>
         private sealed class DataRowMapperCache<TSource>
         {
             private DataRowMapperCache() { }
@@ -349,28 +321,20 @@ namespace Ev.Common.DataConvert
                 return _emptyDataTable.Clone();
             }
         }
-        #endregion
-        #endregion
 
-        #region [2、DataTable to generics]
-
-        #region [2.1 比较慢的方法]
         /// <summary>
         /// <para>表格转集合</para>
         /// <para>DataTable中的列名称自动匹配<see cref="TResult"/>中的属性</para>
         /// <para>当数据量大于100时，请用<see cref="ToListFast{TResult}"/></para>
         /// </summary>
-        /// <typeparam name="TResult"></typeparam>
         /// <param name="dt"></param>
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
         private static List<TResult> ToListSlowly<TResult>(DataTable dt) where TResult : class, new()
         {
-            //初始化转换对象
             List<TResult> resulteList = new List<TResult>();
             if (dt == null) return default(List<TResult>);
-            //获取此模型的公共属性
             PropertyInfo[] propertys = typeof(TResult).GetProperties();
             DataColumnCollection columns = dt.Columns;
             int m = 0;
@@ -382,7 +346,6 @@ namespace Ev.Common.DataConvert
                 {
                     string columnName = p.Name;
                     if (!columns.Contains(columnName)) continue;
-                    //判断此属性是否有Setting或columnName值是否为空
                     object value = dataRow[columnName];
                     if (!p.CanWrite || value is DBNull || value == DBNull.Value || (!p.PropertyType.IsValueType && p.PropertyType != typeof(string))) continue;
                     try
@@ -436,16 +399,12 @@ namespace Ev.Common.DataConvert
             }
             return resulteList;
         }
-        #endregion
 
-        #region [2.2 比较快的方法]
         /// <summary>
         /// <para>表格转集合</para>
         /// <para>DataTable中的列名称自动匹配<see cref="TResult"/>中的属性</para>
         /// <para>当数据量小于100是，请用<see cref="ToListSlowly{TResult}"/></para>
         /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="table"></param>
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
@@ -457,7 +416,6 @@ namespace Ev.Common.DataConvert
             var oldColums = table.Columns;
             var newColums = dt.Columns;
             DataTableEntityBuilder<TResult> eblist = null;
-            //行计数器
             long rowNum = 0;
             foreach (DataRow dataRow in table.Rows)
             {
@@ -503,14 +461,11 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// <para>表格转集合</para>
         /// </summary>
-        /// <typeparam name="TResult"></typeparam>
-        /// <param name="table"></param>
         /// <author>FreshMan</author>
         /// <creattime>2017-06-29</creattime>
         /// <returns></returns>
         public static List<TResult> ToList<TResult>(DataTable table) where TResult : class, new()
         {
-            //初始化转换对象
             List<TResult> list = new List<TResult>();
             if (table == null || table.Rows.Count < 1) return list;
             return table.Rows.Count > 100 ? ToListFast<TResult>(table) : ToListSlowly<TResult>(table);
@@ -536,10 +491,7 @@ namespace Ev.Common.DataConvert
             }
             return listEntity;
         }
-        #endregion
-        #endregion
 
-        #region [3、To int value]
         /// <summary>
         /// 转换成int
         /// </summary>
@@ -573,9 +525,7 @@ namespace Ev.Common.DataConvert
             }
             return num;
         }
-        #endregion
 
-        #region [4、To long value]
         /// <summary>
         /// 转换成long
         /// </summary>
@@ -589,8 +539,6 @@ namespace Ev.Common.DataConvert
         /// <summary>
         /// 转换成long
         /// </summary>
-        /// <param name="val"></param>
-        /// <param name="defaultValue"></param>
         /// <returns></returns>
         public static long ToLong(object val, long defaultValue)
         {
@@ -624,7 +572,6 @@ namespace Ev.Common.DataConvert
             }
             return num;
         }
-        #endregion
     }
 
     /// <summary>

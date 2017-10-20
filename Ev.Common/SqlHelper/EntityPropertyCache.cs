@@ -25,18 +25,12 @@ namespace Ev.Common.SqlHelper
     /// <summary>
     /// 设置属性值的委托
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="obj"></param>
-    /// <param name="obj1"></param>
     /// <returns></returns>
     internal delegate T SetPropertyValueInvoker<T>(T obj, IDataReader obj1);
 
     /// <summary>
     /// 获取属性的值到DataRow中
     /// </summary>
-    /// <typeparam name="T"></typeparam>
-    /// <param name="obj"></param>
-    /// <param name="dataRow"></param>
     /// <returns></returns>
     internal delegate DataRow GetPropertyValueInvoker<in T>(T obj, DataRow dataRow);
 
@@ -46,13 +40,13 @@ namespace Ev.Common.SqlHelper
     internal static class SetPropertyModel<T>
     {
         /// <summary>
-        /// 类型数据
+        /// 
         /// </summary>
         // ReSharper disable once StaticMemberInGenericType
         private static readonly ConcurrentBag<PropertyInfo> WriteProperties;
 
         /// <summary>
-        /// 构造函数
+        /// 
         /// </summary>
         static SetPropertyModel()
         {
@@ -78,13 +72,6 @@ namespace Ev.Common.SqlHelper
             return obj;
         }
 
-        /// <summary>
-        /// 获取单个属性的值
-        /// </summary>
-        /// <param name="dataReader"></param>
-        /// <param name="name"></param>
-        /// <param name="type"></param>
-        /// <returns></returns>
         private static object SecureReaderGetValue(IDataReader dataReader, string name, Type type)
         {
             if (dataReader == null || string.IsNullOrEmpty(name)) return null;
@@ -104,7 +91,6 @@ namespace Ev.Common.SqlHelper
     /// <summary>
     /// 获取属性值到DataRow中
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     internal static class GetPropertyModel<T>
     {
         /// <summary>
@@ -125,9 +111,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取设置的值
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="obj"></param>
-        /// <param name="row"></param>
         /// <returns></returns>
         public static DataRow GetPropertyValue(T obj, DataRow row)
         {

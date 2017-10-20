@@ -26,7 +26,6 @@ namespace Ev.Common.DeepCopy
     /// </summary>
     public static class DeepCopyHelper
     {
-        #region [1、Deep Copy use recursion]
         /// <summary>
         /// Deep copy object
         /// </summary>
@@ -40,60 +39,47 @@ namespace Ev.Common.DeepCopy
             }
 
             Type srcObjType = srcobj.GetType();
-
-            // Is simple value type, directly assign  
             if (srcObjType.IsValueType)
             {
                 return srcobj;
             }
-            // Is array  
             if (srcObjType.IsArray)
             {
                 return DeepCopyArray(srcobj as Array);
             }
-            // is List or map  
-            else if (srcObjType.IsGenericType)
+            if (srcObjType.IsGenericType)
             {
                 return DeepCopyGenericType(srcobj);
             }
-            // is cloneable  
-            else if (srcobj is ICloneable)
+            if (srcobj is ICloneable)
             {
-                // Log informations  
                 return (srcobj as ICloneable).Clone();
             }
-            else
+            object deepCopiedObj = Activator.CreateInstance(srcObjType);
+            BindingFlags bflags = BindingFlags.DeclaredOnly | BindingFlags.Public
+                                  | BindingFlags.NonPublic | BindingFlags.Instance;
+            MemberInfo[] memberCollection = srcObjType.GetMembers(bflags);
+            foreach (MemberInfo member in memberCollection)
             {
-                // Try to do deep copy, create a new copied instance  
-                object deepCopiedObj = Activator.CreateInstance(srcObjType);
-
-                // Find out all fields or properties, do deep copy  
-                BindingFlags bflags = BindingFlags.DeclaredOnly | BindingFlags.Public
-                | BindingFlags.NonPublic | BindingFlags.Instance;
-                MemberInfo[] memberCollection = srcObjType.GetMembers(bflags);
-
-                foreach (MemberInfo member in memberCollection)
+                if (member.MemberType == MemberTypes.Field)
                 {
-                    if (member.MemberType == MemberTypes.Field)
+                    FieldInfo field = (FieldInfo)member;
+                    object fieldValue = field.GetValue(srcobj);
+                    field.SetValue(deepCopiedObj, DeepCopyRecursion(fieldValue));
+                }
+                else if (member.MemberType == MemberTypes.Property)
+                {
+                    PropertyInfo property = (PropertyInfo)member;
+                    MethodInfo info = property.GetSetMethod(false);
+                    if (info != null)
                     {
-                        FieldInfo field = (FieldInfo)member;
-                        object fieldValue = field.GetValue(srcobj);
-                        field.SetValue(deepCopiedObj, DeepCopyRecursion(fieldValue));
-                    }
-                    else if (member.MemberType == MemberTypes.Property)
-                    {
-                        PropertyInfo property = (PropertyInfo)member;
-                        MethodInfo info = property.GetSetMethod(false);
-                        if (info != null)
-                        {
-                            object propertyValue = property.GetValue(srcobj, null);
-                            property.SetValue(deepCopiedObj, DeepCopyRecursion(propertyValue), null);
-                        }
+                        object propertyValue = property.GetValue(srcobj, null);
+                        property.SetValue(deepCopiedObj, DeepCopyRecursion(propertyValue), null);
                     }
                 }
-
-                return deepCopiedObj;
             }
+
+            return deepCopiedObj;
         }
 
         /// <summary>
@@ -104,20 +90,15 @@ namespace Ev.Common.DeepCopy
         private static object DeepCopyGenericType(object srcGeneric)
         {
             try
-            {
-                // Is List   
+            { 
                 IList srcList = srcGeneric as IList;
                 if (srcList == null || srcList.Count <= 0)
                 {
                     return null;
                 }
-
-                // Create new List<object> instance  
                 IList dstList = Activator.CreateInstance(srcList.GetType()) as IList;
-                // deep copy each object in List  
                 foreach (object o in srcList)
                 {
-                    // ReSharper disable once PossibleNullReferenceException
                     dstList.Add(DeepCopyRecursion(o));
                 }
 
@@ -132,10 +113,7 @@ namespace Ev.Common.DeepCopy
                     {
                         return null;
                     }
-
-                    // Create new map instance  
                     IDictionary dstDictionary = Activator.CreateInstance(srcDictionary.GetType()) as IDictionary;
-                    // deep copy each object in map  
                     foreach (object o in srcDictionary.Keys)
                     {
                         // ReSharper disable once PossibleNullReferenceException
@@ -161,9 +139,7 @@ namespace Ev.Common.DeepCopy
             {
                 return null;
             }
-            // Create new array instance based on source array  
             Array arrayCopied = Array.CreateInstance(srcArray.GetValue(0).GetType(), srcArray.Length);
-            // deep copy each object in array  
             for (int i = 0; i < srcArray.Length; i++)
             {
                 object o = DeepCopyRecursion(srcArray.GetValue(i));
@@ -171,6 +147,5 @@ namespace Ev.Common.DeepCopy
             }
             return arrayCopied;
         }
-        #endregion
     }
 }

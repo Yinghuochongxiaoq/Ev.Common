@@ -14,10 +14,11 @@
 *==版权所有：重庆慧都科技有限公司                             ==
 *==============================================================
 */
+
 using System;
 using System.Windows.Input;
 
-namespace Common.Common.Commands
+namespace Ev.Common.Commands
 {
     /// <summary>
     /// An <see cref="ICommand"/> whose delegates can be attached for <see cref="Execute"/> and <see cref="CanExecute"/>.
@@ -34,6 +35,9 @@ namespace Common.Common.Commands
         /// </summary>
         private readonly Func<object, bool> _canExecuteMethod;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public event EventHandler CanExecuteChanged;
 
         /// <summary>

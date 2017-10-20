@@ -34,75 +34,21 @@ namespace Ev.Common.SqlHelper
     /// </summary>
     public static partial class SimpleCrud
     {
-        #region [1、局部变量]
-
-        /// <summary>
-        /// 数据库前缀
-        /// </summary>
         private static string _encapsulation = "[{0}]";
-
-        /// <summary>
-        /// 数据库类型
-        /// </summary>
         private static string _dialect = "SQLServer";
-
-        /// <summary>
-        /// 获取自增长的id值
-        /// </summary>
         private static string _getIdentitySql = "SELECT CAST(SCOPE_IDENTITY()  AS BIGINT) AS [id]";
-
-        /// <summary>
-        /// 排除的字段名称
-        /// </summary>
         private static readonly List<string> ExcludeFieldList = new List<string> { "Loading", "IsLoading", "IsDeleted" };
-
-        /// <summary>
-        /// 表缓存
-        /// </summary>
         private static readonly ConcurrentDictionary<Type, Tuple<string, string>> TableNames = new ConcurrentDictionary<Type, Tuple<string, string>>();
-
-        /// <summary>
-        /// 列缓存
-        /// </summary>
         private static readonly ConcurrentDictionary<string, Tuple<string, string>> ColumnNames = new ConcurrentDictionary<string, Tuple<string, string>>();
-
-        /// <summary>
-        /// 类型中的字段缓存
-        /// </summary>
         private static readonly ConcurrentDictionary<string, List<PropertyInfo>> TypePropertyCaches = new ConcurrentDictionary<string, List<PropertyInfo>>();
-
-        /// <summary>
-        /// 表名称转化器
-        /// </summary>
         private static readonly ITableNameResolver SelftableNameResolver = new TableNameResolver();
-
-        /// <summary>
-        /// 列名转化器
-        /// </summary>
         private static readonly IColumnNameResolver SelfcolumnNameResolver = new ColumnNameResolver();
-
-        /// <summary>
-        /// 时间类型
-        /// </summary>
         private static readonly Type DataTimeType = typeof(DateTime);
-
-        /// <summary>
-        /// 默认起始时间
-        /// </summary>
         private static readonly DateTime DefaultDateTime = new DateTime(1900, 1, 1);
-        #endregion
-
-        #region [2、创建插入SQL]
 
         /// <summary>
         /// 执行插入实体
         /// </summary>
-        /// <param name="entityToInsert"></param>
-        /// <param name="transaction"></param>
-        /// <param name="commandTimeout"></param>
-        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
-        /// <typeparam name="TKey">仅仅支持一下类型：int,uint,long,ulong,short,ushort,Guid,string</typeparam>
-        /// <typeparam name="TEntity"></typeparam>
         /// <returns></returns>
         public static TKey Insert<TKey, TEntity>(TEntity entityToInsert,
             bool transaction = false, int? commandTimeout = null, string connectionString = null)
@@ -169,11 +115,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 创建插入SQL
         /// </summary>
-        /// <param name="entityToInsert"></param>
-        /// <param name="transaction"></param>
-        /// <param name="commandTimeout"></param>
-        /// <typeparam name="TKey">仅仅支持一下类型：int,uint,long,ulong,short,ushort,Guid,string</typeparam>
-        /// <typeparam name="TEntity"></typeparam>
         /// <returns></returns>
         public static string GetInsertSql<TKey, TEntity>(TEntity entityToInsert,
             bool transaction = false, int? commandTimeout = null)
@@ -202,18 +143,15 @@ namespace Ev.Common.SqlHelper
             sb.Append(")");
             return sb.ToString();
         }
-        #endregion
 
-        #region [3、获取表名称]
         /// <summary>
         /// 表转化器
         /// </summary>
         public interface ITableNameResolver
         {
             /// <summary>
-            /// 表名称转化器
+            /// 
             /// </summary>
-            /// <param name="type"></param>
             /// <returns></returns>
             string ResolveTableName(Type type);
         }
@@ -224,7 +162,7 @@ namespace Ev.Common.SqlHelper
         public class TableNameResolver : ITableNameResolver
         {
             /// <summary>
-            /// 表名称转化器
+            /// 
             /// </summary>
             /// <param name="type"></param>
             /// <returns></returns>
@@ -257,7 +195,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取表名称
         /// </summary>
-        /// <param name="databaseword"></param>
         /// <returns></returns>
         private static string Encapsulate(string databaseword)
         {
@@ -267,7 +204,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取表名称，默认是类名称，或者有表的特性（Persistent）；
         /// </summary>
-        /// <param name="entity"></param>
         /// <returns></returns>
         private static string GetTableName(object entity)
         {
@@ -278,7 +214,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取表名称，默认是类名称，或者有表的特性（Persistent）
         /// </summary>
-        /// <param name="type"></param>
         /// <returns></returns>
         private static string GetTableName(Type type)
         {
@@ -292,16 +227,14 @@ namespace Ev.Common.SqlHelper
 
             return tableName;
         }
-        #endregion
 
-        #region [4、获取列名称]
         /// <summary>
         /// Interface Column name resolver
         /// </summary>
         public interface IColumnNameResolver
         {
             /// <summary>
-            /// resolve column name
+            /// 
             /// </summary>
             /// <param name="propertyInfo"></param>
             /// <returns></returns>
@@ -316,7 +249,6 @@ namespace Ev.Common.SqlHelper
             /// <summary>
             /// resolve column name
             /// </summary>
-            /// <param name="propertyInfo"></param>
             /// <returns></returns>
             public virtual string ResolveColumnName(PropertyInfo propertyInfo)
             {
@@ -330,13 +262,10 @@ namespace Ev.Common.SqlHelper
                 return columnName;
             }
         }
-        #endregion
 
-        #region [5、获取主键]
         /// <summary>
         /// 获取属性为Id或者标识了主键特性（Key）
         /// </summary>
-        /// <param name="entity"></param>
         /// <returns></returns>
         private static IEnumerable<PropertyInfo> GetIdProperties(object entity)
         {
@@ -347,22 +276,16 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取主键
         /// </summary>
-        /// <param name="type"></param>
         /// <returns></returns>
         private static IEnumerable<PropertyInfo> GetIdProperties(Type type)
         {
             var tp = type.GetProperties().Where(p => p.GetCustomAttributes(true).Any(attr => attr.GetType().Name == typeof(KeyAttribute).Name)).ToList();
             return tp.Any() ? tp : type.GetProperties().Where(p => p.Name.Equals("Id", StringComparison.OrdinalIgnoreCase));
         }
-        #endregion
-
-        #region [6、获取插入参数集合]
 
         /// <summary>
         /// 获取插入的参数集合
         /// </summary>
-        /// <param name="sb"></param>
-        /// <param name="type"></param>
         private static void BuildInsertParameters(StringBuilder sb, Type type)
         {
             var props = GetScaffoldableProperties(type);
@@ -384,8 +307,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取插入的值
         /// </summary>
-        /// <param name="sb"></param>
-        /// <param name="type"></param>
         private static void BuildInsertValues(StringBuilder sb, Type type)
         {
             var props = GetScaffoldableProperties(type);
@@ -406,10 +327,8 @@ namespace Ev.Common.SqlHelper
 
         /// <summary>  
         /// 根据sql语句和实体对象自动生成参数化查询SqlParameter列表  
-        /// </summary>  
-        /// <typeparam name="T">实体对象类型</typeparam>
-        /// <param name="obj">实体对象</param>  
-        /// <returns>SqlParameter列表</returns>  
+        /// </summary>
+        /// <returns>SqlParameter列表</returns>
         private static List<SqlParameter> ObjectToParameters<T>(T obj)
         {
             List<SqlParameter> parameters = new List<SqlParameter>();
@@ -426,7 +345,6 @@ namespace Ev.Common.SqlHelper
                 object paramsValue = null;
                 if (property.PropertyType.Name == "String" || property.PropertyType.IsValueType)
                 {
-                    //傻逼的时间类型特殊处理
                     if (property.PropertyType == typeof(DateTime))
                     {
                         if (((DateTime)props[i].GetValue(obj, null)) < new DateTime(1900, 1, 1))
@@ -476,9 +394,6 @@ namespace Ev.Common.SqlHelper
 
             return parameters;
         }
-        #endregion
-
-        #region [7、获取可存储参数]
 
         /// <summary>
         /// 获取可存储的简单类型
@@ -507,7 +422,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取列名称
         /// </summary>
-        /// <param name="propertyInfo"></param>
         /// <returns></returns>
         private static string GetColumnName(PropertyInfo propertyInfo)
         {
@@ -525,7 +439,6 @@ namespace Ev.Common.SqlHelper
 
         /// <summary>
         ///根据当前时间生成GUID
-        /// <para> http://stackoverflow.com/questions/1752004/sequential-guid-generator-c-sharp </para>
         /// </summary>
         /// <returns></returns>
         private static Guid SequentialGuid()
@@ -541,18 +454,10 @@ namespace Ev.Common.SqlHelper
             bytes[4] = (byte)time.Second;
             return new Guid(bytes);
         }
-        #endregion
-
-        #region [8、创建更新SQL]
 
         /// <summary>
         /// 更新实体信息
         /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <param name="entityToUpdate"></param>
-        /// <param name="transaction"></param>
-        /// <param name="commandTimeout"></param>
-        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
         public static int Update<TEntity>(TEntity entityToUpdate, bool transaction = false, int? commandTimeout = null, string connectionString = null)
         {
@@ -570,44 +475,30 @@ namespace Ev.Common.SqlHelper
             var paramters = ObjectToParameters(entityToUpdate);
             return ExecuteCommand(sb.ToString(), paramters, transaction, commandTimeout, connectionString);
         }
-        #endregion
-
-        #region [9、获取更新列表]
 
         /// <summary>
         /// 获取更新的set语句块
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entityToUpdate"></param>
-        /// <param name="sb"></param>
         private static void BuildUpdateSet<T>(T entityToUpdate, StringBuilder sb)
         {
             var nonIdProps = GetUpdateableProperties(entityToUpdate).ToArray();
-
             for (var i = 0; i < nonIdProps.Length; i++)
             {
                 var property = nonIdProps[i];
-
                 sb.AppendFormat("{0} = @{1}", GetColumnName(property), property.Name);
                 if (i < nonIdProps.Length - 1)
                     sb.AppendFormat(", ");
             }
         }
-        #endregion
-
-        #region [10、获取更新字段列表]
 
         /// <summary>
         /// 获取更新的字段列表
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="entity"></param>
         /// <returns></returns>
         private static IEnumerable<PropertyInfo> GetUpdateableProperties<T>(T entity)
         {
             var type = entity.GetType();
             var entityBaseProperty = GetScaffoldableProperties(type);
-            //remove ones with key attribute
             var updateableProperties =
                 entityBaseProperty.Where(
                     p =>
@@ -616,18 +507,10 @@ namespace Ev.Common.SqlHelper
 
             return updateableProperties;
         }
-        #endregion
-
-        #region [11、构建更新条件]
 
         /// <summary>
         /// 构建where条件
         /// </summary>
-        /// <typeparam name="TEntity"></typeparam>
-        /// <param name="sb"></param>
-        /// <param name="idProps"></param>
-        /// <param name="sourceEntity"></param>
-        /// <param name="whereConditions"></param>
         private static void BuildWhere<TEntity>(StringBuilder sb, IEnumerable<PropertyInfo> idProps, TEntity sourceEntity, object whereConditions = null)
         {
             var propertyInfos = idProps.ToArray();
@@ -663,9 +546,6 @@ namespace Ev.Common.SqlHelper
                     sb.AppendFormat(" and ");
             }
         }
-        #endregion
-
-        #region [12、获取禁用外键约束]
 
         /// <summary>
         /// 获取禁用外键约束sql
@@ -690,9 +570,6 @@ namespace Ev.Common.SqlHelper
             var result = GetScalar(disableSql, connectionString);
             return result.ToString();
         }
-        #endregion
-
-        #region [13、获取启用外键约束]
 
         /// <summary>
         /// 获取启用外键约束sql
@@ -718,14 +595,9 @@ namespace Ev.Common.SqlHelper
             return result.ToString();
         }
 
-        #endregion
-
-        #region [14、获取删除外键约束]
-
         /// <summary>
         /// 获取删除外键约束的SQL
         /// </summary>
-        /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
         /// <returns></returns>
         public static string GetDeleteForeignKeySql(string connectionString = null)
         {
@@ -743,9 +615,6 @@ namespace Ev.Common.SqlHelper
             var result = GetScalar(disableSql, connectionString);
             return result.ToString();
         }
-        #endregion
-
-        #region [15、获取重建外键约束]
 
         /// <summary>
         /// 获取重建外键约束SQL
@@ -792,36 +661,19 @@ namespace Ev.Common.SqlHelper
             var result = GetScalar(disableSql, connectionString);
             return result.ToString();
         }
-        #endregion
 
-        #region [16、存储实体类型转换]
-
-        /// <summary>
-        /// 类型中的字段缓存
-        /// </summary>
         private static readonly ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>> SaveTypePropertyCaches = new ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>>();
 
-        /// <summary>
-        /// 类型中可写字段缓存
-        /// </summary>
         private static readonly ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>> SaveWriteTypePropertyCaches = new ConcurrentDictionary<string, ConcurrentBag<PropertyInfo>>();
 
-        /// <summary>
-        /// 枚举类型
-        /// </summary>
         private static readonly Type EnumType = typeof(Enum);
 
-        /// <summary>
-        /// 数据库前缀
-        /// </summary>
         private static string _saveencapsulation = "{0}";
 
         /// <summary>
         /// <para>集合转化为表格</para>
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
-        /// <param name="entityList">转换的集合</param> 
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
@@ -847,8 +699,6 @@ namespace Ev.Common.SqlHelper
         /// <para>集合转化为表格</para>
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
-        /// <param name="entityList">转换的集合</param> 
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
@@ -873,8 +723,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取指定类型属性的值
         /// </summary>
-        /// <param name="property"></param>
-        /// <param name="obj"></param>
         /// <returns></returns>
         internal static object GetReflectorValue(PropertyInfo property, object obj)
         {
@@ -935,8 +783,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// <para>创建表格</para>
         /// </summary>
-        /// <param name="type"></param>
-        /// <param name="tableName"></param>
         /// <author>FreshMan</author>
         /// <creattime>2017-06-26</creattime>
         /// <returns></returns>
@@ -959,7 +805,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取类型的可读属性
         /// </summary>
-        /// <param name="type">type</param>
         /// <returns></returns>
         public static ConcurrentBag<PropertyInfo> GetProperties(Type type)
         {
@@ -989,7 +834,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取类型的可写存储属性
         /// </summary>
-        /// <param name="type">type</param>
         /// <returns></returns>
         internal static ConcurrentBag<PropertyInfo> GetWriteProperties(Type type)
         {
@@ -1016,7 +860,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取数据表名称
         /// </summary>
-        /// <param name="type"></param>
         /// <returns></returns>
         private static string ResolveSaveTableName(Type type)
         {
@@ -1046,22 +889,16 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取表名称
         /// </summary>
-        /// <param name="databaseword"></param>
         /// <returns></returns>
         private static string EncapsulateSaveModel(string databaseword)
         {
             return string.Format(_saveencapsulation, databaseword);
         }
-        #endregion
-
-        #region [17、数据行匹配实体]
 
         /// <summary>
         /// 快速匹配到DataTable中
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList">需要映射实例集合</param>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(ConcurrentBag<T> entityList) where T : class
         {
@@ -1080,9 +917,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 快速匹配指定匹配函数
         /// </summary>
-        /// <param name="entityList"></param>
-        /// <param name="mapFunc"></param>
-        /// <typeparam name="T"></typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(ConcurrentBag<T> entityList, Func<T, object[]> mapFunc) where T : class
         {
@@ -1100,10 +934,6 @@ namespace Ev.Common.SqlHelper
         /// 快速匹配指定匹配函数
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList">需要映射实例集合</param>
-        /// <param name="entityType">实例类型</param>
-        /// <param name="mapFunc">map映射方法</param>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(ConcurrentBag<T> entityList, Type entityType, Func<T, object[]> mapFunc) where T : class
         {
@@ -1120,8 +950,6 @@ namespace Ev.Common.SqlHelper
         /// 快速匹配
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList">需要映射实例集合</param>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(IList<T> entityList) where T : class
         {
@@ -1141,9 +969,6 @@ namespace Ev.Common.SqlHelper
         /// 快速匹配指定匹配函数
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList">需要映射实例集合</param>
-        /// <param name="mapFunc">map映射方法</param>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(IList<T> entityList, Func<T, object[]> mapFunc) where T : class
         {
@@ -1161,10 +986,6 @@ namespace Ev.Common.SqlHelper
         /// 快速匹配指定匹配函数
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList">需要映射实例集合</param>
-        /// <param name="entityType">实例类型</param>
-        /// <param name="mapFunc">map映射方法</param>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(IList<T> entityList, Type entityType, Func<T, object[]> mapFunc) where T : class
         {
@@ -1181,8 +1002,6 @@ namespace Ev.Common.SqlHelper
         /// 快速匹配
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList">需要映射实例集合</param>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(IEnumerable<T> entityList) where T : class
         {
@@ -1209,10 +1028,6 @@ namespace Ev.Common.SqlHelper
         /// 快速匹配指定匹配函数
         /// <para>T中应该只包含值类型，或者实体类型中存在<see cref="SaveEntityAttribute"/>特性的对象主键，对应的DataTable自动匹配列名相同的属性</para>
         /// </summary>
-        /// <param name="entityList">需要映射实例集合</param>
-        /// <param name="entityType">实例类型</param>
-        /// <param name="mapFunc">map映射方法</param>
-        /// <typeparam name="T">建议类型中不应该包含有引用类型</typeparam>
         /// <returns></returns>
         public static DataTable MapToDataTable<T>(IEnumerable<T> entityList, Type entityType, Func<T, object[]> mapFunc) where T : class
         {
@@ -1228,7 +1043,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 使用指定属性列表创建指定类型<see cref="TSource"/>映射缓存方法
         /// </summary>
-        /// <typeparam name="TSource"></typeparam>
         public static class DataRowMapperCahche<TSource>
         {
             /// <summary>
@@ -1237,23 +1051,13 @@ namespace Ev.Common.SqlHelper
             static DataRowMapperCahche()
             {
             }
-
-            /// <summary>
-            /// 互斥锁
-            /// </summary>
-            // ReSharper disable once StaticMemberInGenericType
             private static readonly object LockObject = new object();
 
-            /// <summary>
-            /// 适配方法
-            /// </summary>
             private static Func<TSource, object[]> _mapper;
 
             /// <summary>
             /// 适配方法
             /// </summary>
-            /// <param name="typeListConcurrentBag">创建方法属性集合</param>
-            /// <param name="type"><see cref="TSource"/>类型</param>
             /// <returns></returns>
             public static Func<TSource, object[]> GetDataRowMapper(ConcurrentBag<PropertyInfo> typeListConcurrentBag, Type type)
             {
@@ -1274,9 +1078,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 创建一个委托，该TSource的实例映射到一个提供数据表的ItemArray
         /// </summary>
-        /// <typeparam name="TSource">The Generic Type to map from</typeparam>
-        /// <param name="propertyInfos"></param>
-        /// <param name="sourceType">source type</param>
         /// <returns>Func(Of TSource, Object())</returns>
         static internal Func<TSource, object[]> CreateDataRowMapper<TSource>(ConcurrentBag<PropertyInfo> propertyInfos, Type sourceType)
         {
@@ -1289,8 +1090,6 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 获取值
         /// </summary>
-        /// <param name="sourceInstanceExpression"></param>
-        /// <param name="sourceMember"></param>
         /// <returns></returns>
         private static Expression GetSourceValueExpression(ParameterExpression sourceInstanceExpression,
             PropertyInfo sourceMember)
@@ -1299,7 +1098,6 @@ namespace Ev.Common.SqlHelper
             Expression sourceValueExpression = Expression.Constant(DBNull.Value);
             if (sourceMember.PropertyType.Name == "String" || sourceMember.PropertyType.IsValueType)
             {
-                // ReSharper disable once AssignNullToNotNullAttribute
                 if (Nullable.GetUnderlyingType(sourceMember.ReflectedType) == null)
                 {
                     if (sourceMember.PropertyType == typeof(DateTime))
@@ -1349,10 +1147,8 @@ namespace Ev.Common.SqlHelper
             }
             return sourceValueExpression;
         }
-        #endregion
     }
 
-    #region [1、使用自定义的表格标识]
     /// <summary>
     /// Optional Table attribute.
     /// You can use the System.ComponentModel.DataAnnotations version in its place to specify the table name of a poco
@@ -1398,9 +1194,7 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         public string Name { get; private set; }
     }
-    #endregion
 
-    #region [2、Type扩展方法]
     /// <summary>
     /// Type extension
     /// </summary>
@@ -1440,9 +1234,6 @@ namespace Ev.Common.SqlHelper
             return simpleTypes.Contains(type) || type.IsEnum;
         }
     }
-    #endregion
-
-    #region [3、设置是否是父类的标识种子]
 
     /// <summary>
     /// 标识是否父类的标识种子，也就是说作为子类的外键
@@ -1451,9 +1242,6 @@ namespace Ev.Common.SqlHelper
     public class IdentitySeedAttribute : Attribute
     {
     }
-    #endregion
-
-    #region [4、是否保存关联中的实体的主键（单一主键）]
 
     /// <summary>
     /// 是否保存关联中的实体的主键（单一主键）
@@ -1462,5 +1250,4 @@ namespace Ev.Common.SqlHelper
     public class SaveEntityAttribute : Attribute
     {
     }
-    #endregion
 }

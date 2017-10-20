@@ -28,9 +28,6 @@ namespace Ev.Common.Providers
     /// <creattime>2017-05-16</creattime>
     public class DefaultAuthProvider : AuthProvider
     {
-        /// <summary>
-        /// 枚举集合
-        /// </summary>
         private static List<Enum> _operations;
 
         /// <summary>
@@ -63,7 +60,6 @@ namespace Ev.Common.Providers
             if (Equals(operation.GetHashCode(), 0)) return true;
             if (_operations != null && _operations.Count > 0)
             {
-                //TODO 是否存在一个可用权限项
                 return _operations.Any(p => Equals(p, operation));
             }
             return operation.GetHashCode() == 0;

@@ -30,14 +30,13 @@ namespace Ev.Common.Enumber
         /// <summary>
         /// 将枚举类型转换成list集合
         /// </summary>
-        /// <typeparam name="T">枚举类型</typeparam>
         /// <author>FreshMan</author>
         /// <creattime>2017-05-19</creattime>
         /// <returns>枚举list集合</returns>
         public static List<EnumberEntity> EnumToList<T>()
         {
             List<EnumberEntity> list = new List<EnumberEntity>();
-            foreach (var e in System.Enum.GetValues(typeof(T)))
+            foreach (var e in Enum.GetValues(typeof(T)))
             {
                 var m = new EnumberEntity();
                 object[] objArr = e.GetType()
@@ -58,11 +57,10 @@ namespace Ev.Common.Enumber
         /// <summary>
         /// 获得枚举值的Description特性的值，一般是消息的搜索码
         /// </summary>
-        /// <param name="value">要查找特性的枚举值</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-05-19</creattime>
         /// <returns>返回查找到的Description特性的值，如果没有，就返回.ToString()</returns>
-        public static string GetEnumDescription(System.Enum value)
+        public static string GetEnumDescription(Enum value)
         {
             FieldInfo fi = value.GetType().GetField(value.ToString());
             if (fi == null) return value.ToString();
@@ -73,29 +71,25 @@ namespace Ev.Common.Enumber
         /// <summary>
         /// 通过枚举值获得枚举值
         /// </summary>
-        /// <typeparam name="T">枚举类型</typeparam>
-        /// <param name="enumValue">枚举值</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-05-19</creattime>
         /// <returns>枚举对象</returns>
         public static T GetEnumByValue<T>(int enumValue) where T : struct
         {
             if (enumValue < 0) return default(T);
-            return (T)System.Enum.Parse(typeof(T), enumValue.ToString());
+            return (T)Enum.Parse(typeof(T), enumValue.ToString());
         }
 
         /// <summary>
         /// 通过枚举名称获得枚举值
         /// </summary>
-        /// <typeparam name="T">枚举类型</typeparam>
-        /// <param name="enumName">枚举名称</param>
         /// <author>FreshMan</author>
         /// <creattime>2017-05-19</creattime>
         /// <returns>枚举对象</returns>
         public static T GetEnumByName<T>(string enumName) where T : struct
         {
             if (string.IsNullOrEmpty(enumName)) return default(T);
-            return (T)System.Enum.Parse(typeof(T), enumName);
+            return (T)Enum.Parse(typeof(T), enumName);
         }
     }
 }

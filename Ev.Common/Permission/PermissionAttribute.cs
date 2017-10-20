@@ -28,7 +28,6 @@ namespace Ev.Common.Permission
         /// <summary>
         /// 构造函数
         /// </summary>
-        /// <param name="powerEnum">权限枚举，在最终检测是转换成枚举使用</param>
         public PermissionAttribute(object powerEnum)
         {
             CurrentPowerEnum = powerEnum;

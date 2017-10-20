@@ -17,7 +17,7 @@
 
 using System;
 
-namespace Common.Common.Permission
+namespace Ev.Common.Permission
 {
     /// <summary>
     /// Ignore auth attribute
