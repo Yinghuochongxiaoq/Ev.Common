@@ -672,8 +672,6 @@ namespace Ev.Common.SqlHelper
                 try
                 {
                     conn.Open();
-                    //设置批量更新的每次处理条数 
-                    //adapter.UpdateBatchSize = 5000;
                     adapter.SelectCommand.Transaction = conn.BeginTransaction();
                     adapter.Update(table);
                     adapter.SelectCommand.Transaction.Commit();
@@ -698,7 +696,8 @@ namespace Ev.Common.SqlHelper
         /// <param name="tableName">数据库服务器上目标表名</param> 
         /// <param name="dt">含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable</param> 
         /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
-        public static void BulkCopy(string tableName, DataTable dt, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(string tableName, DataTable dt, string connectionString = null, int timeOut = 60)
         {
             if (string.IsNullOrEmpty(tableName) || dt == null || dt.Rows.Count < 0) return;
             if (string.IsNullOrEmpty(connectionString))
@@ -712,8 +711,7 @@ namespace Ev.Common.SqlHelper
                 {
                     using (SqlBulkCopy bulkCopy = new SqlBulkCopy(conn, SqlBulkCopyOptions.Default, transaction))
                     {
-                        //bulkCopy.BatchSize = 20000;
-                        bulkCopy.BulkCopyTimeout = 60;
+                        bulkCopy.BulkCopyTimeout = timeOut;
                         bulkCopy.DestinationTableName = tableName;
                         try
                         {
@@ -743,9 +741,10 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="dt">含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable</param>
         /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
-        public static void BulkCopy(DataTable dt, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(DataTable dt, string connectionString = null, int timeOut = 60)
         {
-            BulkCopy(dt.TableName, dt, connectionString);
+            BulkCopy(dt.TableName, dt, connectionString, timeOut);
         }
 
         /// <summary>
@@ -753,7 +752,8 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
         /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
-        public static void BulkCopy(DataSet ds, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(DataSet ds, string connectionString = null, int timeOut = 60)
         {
             if (ds == null || ds.Tables.Count < 1) return;
             if (string.IsNullOrEmpty(connectionString))
@@ -774,7 +774,7 @@ namespace Ev.Common.SqlHelper
                                 )
                             {
                                 //bulkCopy.BatchSize = 20000;
-                                bulkCopy.BulkCopyTimeout = 60;
+                                bulkCopy.BulkCopyTimeout = timeOut;
                                 bulkCopy.DestinationTableName = dt.TableName;
                                 foreach (DataColumn col in dt.Columns)
                                 {
@@ -803,7 +803,8 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
         /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
-        public static void BulkCopy(IList<DataTable> ds, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(IList<DataTable> ds, string connectionString = null, int timeOut = 60)
         {
             if (ds == null || !ds.Any()) return;
             if (string.IsNullOrEmpty(connectionString))
@@ -824,7 +825,7 @@ namespace Ev.Common.SqlHelper
                                 )
                             {
                                 //bulkCopy.BatchSize = 20000;
-                                bulkCopy.BulkCopyTimeout = 60;
+                                bulkCopy.BulkCopyTimeout = timeOut;
                                 bulkCopy.DestinationTableName = dt.TableName;
                                 foreach (DataColumn col in dt.Columns)
                                 {
@@ -853,10 +854,11 @@ namespace Ev.Common.SqlHelper
         /// </summary>
         /// <param name="ds">多个Table集合，每个Table中含有和目标数据库表结构完全一致(所包含的字段名完全一致即可)的DataTable，Table名称作为表名称</param>
         /// <param name="connectionString">链接字符串，为null,使用全局配置项</param>
-        public static void BulkCopy(ConcurrentBag<DataTable> ds, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(ConcurrentBag<DataTable> ds, string connectionString = null, int timeOut = 60)
         {
             if (ds == null || !ds.Any()) return;
-            Parallel.ForEach(ds, dt => BulkCopy(dt, connectionString));
+            Parallel.ForEach(ds, dt => BulkCopy(dt, connectionString, timeOut));
         }
         #endregion
 
