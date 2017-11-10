@@ -95,7 +95,7 @@ namespace Ev.Common.SqlHelper
             var obj = dataReader[name];
             if (typeof(Enum).IsAssignableFrom(type))
             {
-                return Enum.Parse(type, obj.ToString());
+                return Enum.Parse(type, string.IsNullOrEmpty(obj.ToString()) ? "0" : obj.ToString());
             }
             return obj;
         }
