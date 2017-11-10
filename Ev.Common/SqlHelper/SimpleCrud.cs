@@ -626,7 +626,8 @@ namespace Ev.Common.SqlHelper
         /// 大批量插入数据 
         /// 已采用整体事物控制 
         /// </summary> 
-        public static void BulkCopy(string tableName, DataTable dt, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(string tableName, DataTable dt, string connectionString = null, int timeOut = 60)
         {
             if (string.IsNullOrEmpty(tableName) || dt == null || dt.Rows.Count < 0) return;
             if (string.IsNullOrEmpty(connectionString))
@@ -668,15 +669,17 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 大批量插入数据
         /// </summary>
-        public static void BulkCopy(DataTable dt, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(DataTable dt, string connectionString = null, int timeOut = 60)
         {
-            BulkCopy(dt.TableName, dt, connectionString);
+            BulkCopy(dt.TableName, dt, connectionString, timeOut);
         }
 
         /// <summary>
         /// 批量插入数据
         /// </summary>
-        public static void BulkCopy(DataSet ds, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(DataSet ds, string connectionString = null, int timeOut = 60)
         {
             if (ds == null || ds.Tables.Count < 1) return;
             if (string.IsNullOrEmpty(connectionString))
@@ -723,7 +726,8 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 批量插入数据
         /// </summary>
-        public static void BulkCopy(IList<DataTable> ds, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(IList<DataTable> ds, string connectionString = null, int timeOut = 60)
         {
             if (ds == null || !ds.Any()) return;
             if (string.IsNullOrEmpty(connectionString))
@@ -770,10 +774,11 @@ namespace Ev.Common.SqlHelper
         /// <summary>
         /// 批量插入数据
         /// </summary>
-        public static void BulkCopy(ConcurrentBag<DataTable> ds, string connectionString = null)
+        /// <param name="timeOut">超时时间，单位秒，默认60s</param>
+        public static void BulkCopy(ConcurrentBag<DataTable> ds, string connectionString = null, int timeOut = 60)
         {
             if (ds == null || !ds.Any()) return;
-            Parallel.ForEach(ds, dt => BulkCopy(dt, connectionString));
+            Parallel.ForEach(ds, dt => BulkCopy(dt, connectionString, timeOut));
         }
 
         private static string GetDeleteOrDropDataTableSqlByName(List<string> tableNameList, string dataBase, bool isView, int type, string connectionString = null)
