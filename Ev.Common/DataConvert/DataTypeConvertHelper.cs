@@ -625,6 +625,27 @@ namespace Ev.Common.DataConvert
             return num;
         }
         #endregion
+
+        #region [5、To DateTime value]
+        /// <summary>
+        /// 转换成DateTime，转换失败返回1900-1-1
+        /// </summary>
+        /// <param name="val"></param>
+        /// <returns></returns>
+        public static DateTime ToDateTime(object val)
+        {
+            DateTime time;
+            if ((val == null) || (val == DBNull.Value))
+            {
+                return new DateTime(0x76c, 1, 1);
+            }
+            if (val is DateTime)
+            {
+                return (DateTime)val;
+            }
+            return !DateTime.TryParse(val.ToString(), out time) ? new DateTime(0x76c, 1, 1) : time;
+        }
+        #endregion
     }
 
     /// <summary>
