@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.Common", "Ev.Common\Ev.C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.CommonTests", "Ev.CommonTests\Ev.CommonTests.csproj", "{7CA5C693-48E9-4205-AC80-EB20089D6BE2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ev.Common.WriteLog", "ConsoleApplication1\Ev.Common.WriteLog.csproj", "{2388C1F0-AFF0-4355-A8B9-F0F185D29EDF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7CA5C693-48E9-4205-AC80-EB20089D6BE2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7CA5C693-48E9-4205-AC80-EB20089D6BE2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7CA5C693-48E9-4205-AC80-EB20089D6BE2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2388C1F0-AFF0-4355-A8B9-F0F185D29EDF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2388C1F0-AFF0-4355-A8B9-F0F185D29EDF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2388C1F0-AFF0-4355-A8B9-F0F185D29EDF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2388C1F0-AFF0-4355-A8B9-F0F185D29EDF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

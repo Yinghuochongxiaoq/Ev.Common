@@ -15,6 +15,8 @@
 *==============================================================
 */
 
+using System;
+using System.Reflection;
 using Ev.Common.Enumber;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
