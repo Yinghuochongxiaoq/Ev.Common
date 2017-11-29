@@ -40,7 +40,7 @@
             // NoticeCurrentTime
             // 
             this.NoticeCurrentTime.Description = "提醒当前时间";
-            this.NoticeCurrentTime.ServiceName = "Service1";
+            this.NoticeCurrentTime.ServiceName = "NoticeCurrentTimeService";
             this.NoticeCurrentTime.StartType = System.ServiceProcess.ServiceStartMode.Automatic;
             // 
             // ProjectInstaller
